@@ -31,10 +31,160 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace Qz {
+	class Bank {
+		private const string bankStateFile = "stored.txt";
+		public int Count;
+		public int GroupSize = 16;
+		private List<string> bank = new List<string>();
+		public List<Word> Words = new List<Word>();
+		public List<Meaning> Meanings = new List<Meaning>();
+
+		public bool Finished
+		{
+			get {
+				return Count == 0 && Words.Count == 0;
+			}
+		}
+
+		// A few sanity checks here would probably be wise here. Currently,
+		// we don't actually parse the file until we display the words. We
+		// should parse it here or at least make sure it's parsable.
+		public bool FillBank(string file)
+		{
+			if (file == null)
+				file = bankStateFile;
+
+			bank.Clear();
+			string line;
+
+			try {
+				using (var sr = new System.IO.StreamReader(file))
+					while ((line = sr.ReadLine()) != null)
+						bank.Add(line);
+			} catch (Exception e) {
+				MessageBox.Show("Error reading word bank: " + e.Message);
+				return false;
+			}
+
+			NextGroup();
+			return true;
+		}
+
+		public bool DumpBank(string file)
+		{
+			Check();
+
+			if (file == null)
+				file = bankStateFile;
+
+			try {
+				using (var sw = new System.IO.StreamWriter(file)) {
+					foreach (var line in bank)
+						sw.WriteLine(line);
+					foreach (var word in Words)
+						if (!word.Correct)
+							sw.WriteLine(word.Text + '\t' + word.Meaning.Text);
+				}
+			} catch (Exception e) {
+				MessageBox.Show("Error writing word bank: " + e.Message);
+				return false;
+			}
+
+			return true;
+		}
+
+		private void Next(Graphics g)
+		{
+			var line = bank.TakeAt(Util.Random.Next(bank.Count)).Split('\t');
+			var meaning = new Meaning(line[1], g, Meanings);
+			Words.Add(new Word(line[0], meaning, g));
+			Meanings.Add(meaning);
+		}
+
+		public bool Check()
+		{
+			int wrong = Words.TestWrong();
+			Count = Words.Count - wrong + bank.Count;
+			Program.Instance.Invalidate();
+			return wrong == 0;
+		}
+
+		public void Shuffle()
+		{
+			Meanings.Shuffle(Words.CalcRightEdge());
+			Check();
+		}
+
+		private void Reload()
+		{
+			int edge = Words.Order();
+			Meanings.Shuffle(edge);
+			Check();
+		}
+
+		public void AddRandom()
+		{
+			if (bank.Count != 0) {
+				using (var g = Program.Instance.CreateGraphics())
+					Next(g);
+				GroupSize = Words.Count;
+				Reload();
+			}
+		}
+
+		public void RestoreLast()
+		{
+			if (Words.Count > 1) {
+				var word = Words.TakeAt(Words.Count - 1);
+				word.Meaning.Remove();
+				Words.Remove(word);
+				Meanings.Remove(word.Meaning);
+				bank.Add(word.Text + '\t' + word.Meaning.Text);
+				GroupSize = Words.Count;
+				Reload();
+			}
+		}
+
+		public void NextGroup()
+		{
+			Words.Clear();
+			Meanings.Clear();
+
+			if (bank.Count != 0) {
+				int size = GroupSize;
+				using (var g = Program.Instance.CreateGraphics())
+					while (--size != -1 && bank.Count != 0)
+						Next(g);
+				Reload();
+			}
+		}
+	}
+
+	static class TileCollection {
+		public static SolidBrush CorrectBrush =
+			new SolidBrush(Color.FromArgb(85, Color.Green));
+		public const int LineHeight = 40;
+
+		public static void Paint<T>(this List<T> tiles, Graphics g) where T : Tile
+		{
+			foreach (var tile in tiles)
+				g.DrawString(tile.Text, Program.FontFace, tile.Correct ?
+				             CorrectBrush : Brushes.Black,
+				             tile.Rect.Location);
+		}
+	}
+
 	class Tile : IComparable {
 		public readonly string Text;
 		public bool Correct;
 		public Rectangle Rect;
+
+		public virtual int X
+		{
+			set {
+				Rect.X = value;
+			}
+		}
 
 		public Tile(string text, Graphics g)
 		{
@@ -47,145 +197,56 @@ namespace Qz {
 			return Text.CompareTo((other as Tile).Text);
 		}
 	}
-	class Word : Tile {
-		private const string bankStateFile = "stored.txt";
-		public const int LineHeight = 40;
 
-		static List<string> bank;
-		static List<Word> current = new List<Word>();
-		public static int Count;
-		public static int GroupSize = 16;
-		public static bool Finished;
-
-		// A few sanity checks here would probably be wise here. Currently,
-		// we don't actually parse the file until we display the words. We
-		// should parse it here or at least make sure it's parsable.
-		public static bool FillBank(string file)
+	static class WordCollection {
+		public static void ResetCorrect(this List<Word> current)
 		{
-			if (file == null)
-				file = bankStateFile;
-
-			bank = new List<string>();
-			string line;
-
-			try {
-				using (var sr = new System.IO.StreamReader(file))
-					while ((line = sr.ReadLine()) != null)
-						bank.Add(line);
-			} catch (Exception e) {
-				MessageBox.Show("Error reading word bank: " + e.Message);
-				return false;
-			}
-
-			Finished = false;
-
-			NextGroup();
-			return true;
+			foreach (var word in current)
+				word.Correct = word.Meaning.Correct = false;
 		}
 
-		public static bool DumpBank(string file)
+		public static int TestWrong(this List<Word> current)
 		{
-			TestAllCorrect(false);
-
-			if (file == null)
-				file = bankStateFile;
-
-			try {
-				using (var sw = new System.IO.StreamWriter(file)) {
-					foreach (var line in bank)
-						sw.WriteLine(line);
-					foreach (var word in current)
-						if (!word.Correct)
-							sw.WriteLine(word.Text + '\t' + word.Meaning.Text);
-				}
-			} catch (Exception e) {
-				MessageBox.Show("Error writing word bank: " + e.Message);
-				return false;
-			}
-
-			return true;
-		}
-
-		public static bool TestAllCorrect(bool reset)
-		{
-			if (reset)
-				foreach (var word in current)
-					word.Correct = word.Meaning.Correct = false;
-
 			// It would be better to use Count(), but Mono (as of 1.9.1)
 			// ignores it because it has the same name as a property. . .
-			int wrong = (int)current.LongCount(word => !word.TestCorrect());
-			Count = bank.Count + wrong;
-			return wrong == 0;
+			return (int)current.LongCount(word => !word.TestCorrect());
 		}
 
-		static void OrderAll()
+		public static int Order(this List<Word> current)
 		{
 			current.Sort();
 
-			int marginX = current.Max((Func<Word, int>)(word => word.Rect.Width));
-
+			int right = current.CalcRightEdge();
 			int y = -20;
 			foreach (var word in current) {
-				word.Rect.X = marginX - word.Rect.Width;
-				word.Rect.Y = y += LineHeight;
+				word.Rect.X = right - word.Rect.Width;
+				word.Rect.Y = y += TileCollection.LineHeight;
 			}
 
-			Meaning.Offset = marginX + 5;
-			Meaning.ShuffleAll();
-			TestAllCorrect(true);
+			return right;
 		}
 
-		public static void PaintAll(Graphics g)
+		public static int CalcRightEdge(this List<Word> current)
 		{
-			foreach (var word in current)
-				g.DrawString(word.Text, Program.FontFace, word.Correct ?
-				             Program.CorrectBrush : Brushes.Black,
-				             word.Rect.Location);
+			return current.Max((Func<Word, int>)(word => word.Rect.Width));
 		}
+	}
 
-		public static void AddRandom()
-		{
-			if (bank.Count != 0) {
-				using (var g = Program.Instance.CreateGraphics())
-					current.Add(new Word(bank.TakeAt(Util.Random.Next(bank.Count)).Split('\t'), g));
-				GroupSize = current.Count;
-				OrderAll();
-			}
-		}
 
-		public static void RestoreLast()
-		{
-			if (!Finished && current.Count != 1) {
-				bank.Add(current.TakeAt(current.Count - 1).Remove());
-				GroupSize = current.Count;
-				OrderAll();
-			}
-		}
-
-		public static void NextGroup()
-		{	
-			current.Clear();
-			Meaning.ClearAll();
-
-			if (bank.Count == 0) {
-				Finished = true;
-			} else {
-				int size = GroupSize;
-				using (var g = Program.Instance.CreateGraphics())
-					while (--size != -1 && bank.Count != 0)
-						current.Add(new Word(bank.TakeAt(Util.Random.Next(bank.Count)).Split('\t'), g));
-
-				OrderAll();
-			}
-		}
-
+	class Word : Tile {
 		public readonly Meaning Meaning;
 
-		public Word(string[] line, Graphics g)
-			: base(line[0], g)
+		public override int X
 		{
-			Meaning = new Meaning(line[1], g);
+			set {
+				Rect.X = value - Rect.Width - 5;
+			}
+		}
+
+		public Word(string text, Meaning meaning, Graphics g)
+			: base(text, g)
+		{
+			Meaning = meaning;
 		}
 
 		public bool TestCorrect()
@@ -196,60 +257,31 @@ namespace Qz {
 			else
 				return false;
 		}
+	}
 
-		public string Remove()
+	static class MeaningCollection {
+		public static Meaning FindContainer(this List<Meaning> current, Point loc)
 		{
-			Meaning.Remove();
-			return Text + '\t' + Meaning.Text;
+			return current.FirstOrDefault(def =>
+			                              def.Rect.Contains(loc)
+			                              && !def.Correct);
+		}
+
+		public static void Shuffle<T>(this List<T> current, int offset) where T : Tile
+		{
+			var rands = new List<T>(current);
+			for (int y = 20; rands.Count != 0; y += TileCollection.LineHeight) {
+				var def = rands.TakeAt(Util.Random.Next(rands.Count));
+				def.Rect.X = offset;
+				def.Rect.Y = y;
+			}
 		}
 	}
 
 	class Meaning : Tile {
-		public static int Offset;
-		static List<Meaning> current = new List<Meaning>();
-
-		public static void PaintAll(Graphics g)
-		{
-			foreach (var def in current)
-				g.DrawString(def.Text, Program.FontFace,
-				             def.Correct ? Program.CorrectBrush : Brushes.Black,
-				             def.Rect.Location);
-		}
-
-		public static Meaning FindContainer(Point loc)
-		{
-			return current.FirstOrDefault(def =>
-				                       def.Rect.Contains(loc)
-				                       && !def.Correct);
-		}
-
-		public static void ShuffleAll()
-		{
-			var rands = new List<Meaning>(current);
-			int i;
-
-			for (int y = 20; rands.Count != 0; y += Word.LineHeight) {
-				// This has the possibility of leaving one meaning at its
-				// original position, however the chances are low enough
-				// that it's not worth the added complexity to fix this.
-				// A free word every now and then is satisfying anyway. ^_^
-				do {
-					i = Util.Random.Next(rands.Count);
-				} while (rands[i].Rect.Y == y && rands.Count != 1);
-				var def = rands.TakeAt(i);
-				def.Rect.X = Offset;
-				def.Rect.Y = y;
-			}
-		}
-
-		public static void ClearAll()
-		{
-			current.Clear();
-		}
-
 		public Meaning Next;
 
-		public Meaning(string text, Graphics g)
+		public Meaning(string text, Graphics g, List<Meaning> current)
 			: base(text, g)
 		{
 			var dup = current.FirstOrDefault(def => def.Text == Text);
@@ -258,8 +290,6 @@ namespace Qz {
 				dup.Next = this;
 			} else
 				Next = this;
-
-			current.Add(this);
 		}
 
 		public Meaning GetCorrect(Word word)
@@ -274,8 +304,6 @@ namespace Qz {
 
 		public void Remove()
 		{
-			current.Remove(this);
-
 			var def = Next;
 			while (def.Next != this)
 				def = def.Next;
@@ -285,10 +313,10 @@ namespace Qz {
 
 	class Program : Form {
 		public static Program Instance;
-		public static SolidBrush CorrectBrush =
-			new SolidBrush(Color.FromArgb(85, Color.Green));
 		public static Font FontFace =
 			new Font(FontFamily.GenericSansSerif, 12);
+
+		Bank WordBank = new Bank();
 
 		bool proceed;
 		Meaning moving;
@@ -342,21 +370,19 @@ namespace Qz {
 				file.Put("-");
 
 				file.Put("Load Remaining\tL", delegate {
-					Word.FillBank(null);
-					Invalidate();
+					WordBank.FillBank(null);
 				});
 				file.Put("Load Remaining From...", Shortcut.CtrlO, delegate {
-					ShowFileDialog(new OpenFileDialog(), Word.FillBank);
-					Invalidate();
+					ShowFileDialog(new OpenFileDialog(), WordBank.FillBank);
 				});
 
 				file.Put("-");
 
 				file.Put("Save Remaining\tD", delegate {
-					Word.DumpBank(null);
+					WordBank.DumpBank(null);
 				});
 				file.Put("Save Remaining To...", Shortcut.CtrlS, delegate {
-					ShowFileDialog(new SaveFileDialog(), Word.DumpBank);
+					ShowFileDialog(new SaveFileDialog(), WordBank.DumpBank);
 				});
 
 				file.Put("-");
@@ -370,12 +396,10 @@ namespace Qz {
 				var view = Menu.Put("View");
 
 				view.Put("Fewer\t-", delegate {
-					Word.RestoreLast();
-					Invalidate();
+					WordBank.RestoreLast();
 				});
 				view.Put("More\t+", delegate {
-					Word.AddRandom();
-					Invalidate();
+					WordBank.AddRandom();
 				});
 
 				view.Put("-");
@@ -388,8 +412,8 @@ namespace Qz {
 				});
 			}
 
-			if (!Word.FillBank("words.txt"))
-				ShowFileDialog(new OpenFileDialog(), Word.FillBank);
+			if (!WordBank.FillBank("words.txt"))
+				ShowFileDialog(new OpenFileDialog(), WordBank.FillBank);
 		}
 
 		private void ShowFileDialog(FileDialog dlg, Func<string, bool> cb)
@@ -408,15 +432,13 @@ namespace Qz {
 
 		private void ShuffleDefs()
 		{
-			Meaning.ShuffleAll();
-			Word.TestAllCorrect(true);
+			WordBank.Shuffle();
 			proceed = false;
-			Invalidate();
 		}
 
 		protected override void OnPaint(PaintEventArgs e)
 		{
-			if (Word.Finished) {
+			if (WordBank.Finished) {
 				AutoScrollMinSize = Size.Empty;
 				TextRenderer.DrawText(e.Graphics, "SUCCESS",
 				                      new Font(FontFamily.GenericSansSerif, 36),
@@ -425,30 +447,28 @@ namespace Qz {
 				                      TextFormatFlags.VerticalCenter);
 			} else {
 				AutoScrollMinSize
-					= new Size(0, Word.GroupSize * Word.LineHeight + 10);
+					= new Size(0, WordBank.GroupSize * TileCollection.LineHeight + 10);
 
 				var g = e.Graphics;
 				g.TranslateTransform(0, AutoScrollPosition.Y);
 
-				g.DrawString("Remaining: " + Word.Count
+				g.DrawString("Remaining: " + WordBank.Count
 				             , FontFace, Brushes.Black, 0, 0);
 
-				Word.PaintAll(g);
+				WordBank.Words.Paint(g);
 				if (!hideDefs)
-					Meaning.PaintAll(g);
+					WordBank.Meanings.Paint(g);
 			}
 		}
 
 		private void Check()
 		{
 			if (proceed) {
-				if (Word.TestAllCorrect(false))
-					Word.NextGroup();
+				if (WordBank.Check())
+					WordBank.NextGroup();
 				proceed = false;
-			} else if (Word.TestAllCorrect(false))
+			} else if (WordBank.Check())
 				proceed = true;
-
-			Invalidate();
 		}
 
 		// Since Shortcut hates us, it has implemented itself as an enum,
@@ -463,13 +483,11 @@ namespace Qz {
 				break;
 			case Keys.Oemplus:
 			case Keys.Add:
-				Word.AddRandom();
-				Invalidate();
+				WordBank.AddRandom();
 				break;
 			case Keys.OemMinus:
 			case Keys.Subtract:
-				Word.RestoreLast();
-				Invalidate();
+				WordBank.RestoreLast();
 				break;
 			case Keys.H:
 				ToggleDefs();
@@ -478,11 +496,10 @@ namespace Qz {
 				ShuffleDefs();
 				break;
 			case Keys.D:
-				Word.DumpBank(null);
+				WordBank.DumpBank(null);
 				break;
 			case Keys.L:
-				Word.FillBank(null);
-				Invalidate();
+				WordBank.FillBank(null);
 				break;
 			case Keys.J:
 			case Keys.Down:
@@ -500,6 +517,8 @@ namespace Qz {
 
 		// Why there is not a method that both moves the scrollbar _and_ client
 		// area escapes me...
+		//
+		// FIXME: make this work in the Mono runtime at some point
 		public void VScrollBy(int v)
 		{
 			v = AutoScrollPosition.Y - v;
@@ -512,7 +531,7 @@ namespace Qz {
 			if (e.Button == MouseButtons.Left) {
 				var loc = e.Location;
 				loc.Y -= AutoScrollPosition.Y;
-				moving = Meaning.FindContainer(e.Location);
+				moving = WordBank.Meanings.FindContainer(e.Location);
 
 				if (moving != null) {
 					MouseMove += motion;
