@@ -28,6 +28,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Resources;
 using System.Windows.Forms;
 
 namespace Qz {
@@ -57,6 +58,13 @@ namespace Qz {
 		{
 			if (File.Exists(BankStateFile))
 				FillBank(BankStateFile);
+			else {
+				using (var rr = new ResourceReader("words.resources")) {
+					foreach (System.Collections.DictionaryEntry word in rr)
+						bank.Add(new KeyValuePair<string, string>((string)word.Key, (string)word.Value));
+				}
+				NextGroup();
+			}
 		}
 
 		// A few sanity checks here would probably be wise here. Currently,
@@ -114,7 +122,7 @@ namespace Qz {
 		public bool Check()
 		{
 			int wrong = Words.TestWrong();
-			Program.Instance.UpdateCount(wrong, Words.Count - wrong + bank.Count);
+			Program.Instance.UpdateCount(wrong, wrong + bank.Count);
 			return wrong == 0;
 		}
 
@@ -257,7 +265,6 @@ namespace Qz {
 			return current.Max((Func<Word, int>)(word => word.Rect.Width));
 		}
 	}
-
 
 	class Word : Tile {
 		public readonly Meaning Meaning;
