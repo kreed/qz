@@ -111,13 +111,13 @@ namespace Qz {
 
 		public void Shuffle()
 		{
-			Meanings.Shuffle(Words.CalcRightEdge());
+			Meanings.Shuffle(Words.CalcRightEdge() + 5);
 			Check();
 		}
 
 		private void Reload()
 		{
-			int edge = Words.Order();
+			int edge = Words.Order() + 5;
 			Meanings.Shuffle(edge);
 			Check();
 		}
@@ -176,8 +176,16 @@ namespace Qz {
 
 	class Tile : IComparable {
 		public readonly string Text;
-		public bool Correct;
 		public Rectangle Rect;
+
+		private Tile pair;
+
+		public virtual bool Correct
+		{
+			get {
+				return pair != null;
+			}
+		}
 
 		public virtual int X
 		{
@@ -196,15 +204,24 @@ namespace Qz {
 		{
 			return Text.CompareTo((other as Tile).Text);
 		}
+
+		public Tile Pair(Tile other)
+		{
+			if (pair != null)
+				pair.pair = null;
+			pair = other;
+
+			if (other != null) {
+				if (other.pair != null)
+					other.pair = null;
+				other.pair = this;
+			}
+
+			return other;
+		}
 	}
 
 	static class WordCollection {
-		public static void ResetCorrect(this List<Word> current)
-		{
-			foreach (var word in current)
-				word.Correct = word.Meaning.Correct = false;
-		}
-
 		public static int TestWrong(this List<Word> current)
 		{
 			// It would be better to use Count(), but Mono (as of 1.9.1)
@@ -251,11 +268,7 @@ namespace Qz {
 
 		public bool TestCorrect()
 		{
-			var def = Meaning.GetCorrect(this);
-			if (def != null)
-				return Correct = def.Correct = true;
-			else
-				return false;
+			return Pair(Meaning.GetCorrect(this)) != null;
 		}
 	}
 
@@ -304,6 +317,7 @@ namespace Qz {
 
 		public void Remove()
 		{
+			Pair(null);
 			var def = Next;
 			while (def.Next != this)
 				def = def.Next;
@@ -342,8 +356,8 @@ namespace Qz {
 
 			Text = "Qz";
 			BackColor = Color.White;
-			Width = 500;
-			Height = 700;
+			Size = new Size(500, 700);
+			AutoScroll = true;
 
 			SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
 			         | ControlStyles.DoubleBuffer, true);
