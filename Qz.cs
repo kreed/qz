@@ -33,7 +33,6 @@ using System.Windows.Forms;
 namespace Qz {
 	class Bank {
 		private const string bankStateFile = "stored.txt";
-		public int Count;
 		public int GroupSize = 16;
 		private List<KeyValuePair<string, string>> bank
 			= new List<KeyValuePair<string, string>>();
@@ -43,7 +42,7 @@ namespace Qz {
 		public bool Finished
 		{
 			get {
-				return Count == 0 && Words.Count == 0;
+				return bank.Count == 0 && Words.Count == 0;
 			}
 		}
 
@@ -115,8 +114,7 @@ namespace Qz {
 		public bool Check()
 		{
 			int wrong = Words.TestWrong();
-			Count = Words.Count - wrong + bank.Count;
-			Program.Instance.Invalidate();
+			Program.Instance.UpdateCount(wrong, Words.Count - wrong + bank.Count);
 			return wrong == 0;
 		}
 
@@ -245,7 +243,7 @@ namespace Qz {
 			current.Sort();
 
 			int right = current.CalcRightEdge();
-			int y = -20;
+			int y = -15;
 			foreach (var word in current) {
 				word.Rect.X = right - word.Rect.Width;
 				word.Rect.Y = y += TileCollection.LineHeight;
@@ -294,7 +292,7 @@ namespace Qz {
 		public static void Shuffle<T>(this List<T> current, int offset) where T : Tile
 		{
 			var rands = new List<T>(current);
-			for (int y = 20; rands.Count != 0; y += TileCollection.LineHeight) {
+			for (int y = 25; rands.Count != 0; y += TileCollection.LineHeight) {
 				var def = rands.TakeAt(Util.Random.Next(rands.Count));
 				def.Rect.X = offset;
 				def.Rect.Y = y;
@@ -348,6 +346,7 @@ namespace Qz {
 		Point lastLoc;
 
 		MouseEventHandler motion;
+		ToolStripStatusLabel count;
 		int scrollOffset;
 		Timer scrollTimer;
 
@@ -365,7 +364,7 @@ namespace Qz {
 
 			Text = "Qz";
 			BackColor = Color.White;
-			Size = new Size(500, 710);
+			Size = new Size(500, 685);
 			AutoScroll = true;
 
 			SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
@@ -440,6 +439,10 @@ namespace Qz {
 				menu.Items.Add(view);
 			}
 
+			count = new ToolStripStatusLabel();
+			count.Alignment = ToolStripItemAlignment.Right;
+			menu.Items.Add(count);
+
 			Controls.Add(menu);
 
 			WordBank.Init();
@@ -459,6 +462,12 @@ namespace Qz {
 			proceed = false;
 		}
 
+		public void UpdateCount(int active, int bank)
+		{
+			count.Text = String.Format("{0}/{1}", active, bank);
+			Invalidate();
+		}
+
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			if (WordBank.Finished) {
@@ -474,9 +483,6 @@ namespace Qz {
 
 				var g = e.Graphics;
 				g.TranslateTransform(0, AutoScrollPosition.Y);
-
-				g.DrawString("Remaining: " + WordBank.Count
-				             , FontFace, Brushes.Black, 0, 0);
 
 				WordBank.Words.Paint(g);
 				if (!hideDefs)
@@ -547,7 +553,7 @@ namespace Qz {
 				scrollTimer.Enabled = false;
 
 				if (autoCheck)
-					Check();
+					WordBank.Check();
 			}
 		}
 
