@@ -33,7 +33,6 @@ using System.Windows.Forms;
 
 namespace Qz {
 	class Bank {
-		private const string bankStateFile = "stored.txt";
 		public int GroupSize = 16;
 		private List<KeyValuePair<string, string>> bank
 			= new List<KeyValuePair<string, string>>();
@@ -65,6 +64,13 @@ namespace Qz {
 				}
 				NextGroup();
 			}
+
+			Application.ApplicationExit += new EventHandler(OnExit);
+		}
+
+		public void OnExit(object o, EventArgs e)
+		{
+			DumpBank(BankStateFile);
 		}
 
 		// A few sanity checks here would probably be wise here. Currently,
@@ -122,7 +128,7 @@ namespace Qz {
 		public bool Check()
 		{
 			int wrong = Words.TestWrong();
-			Program.Instance.UpdateCount(wrong, wrong + bank.Count);
+			Program.Instance.UpdateCount(Words.Count - wrong, wrong + bank.Count);
 			return wrong == 0;
 		}
 
