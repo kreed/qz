@@ -56,7 +56,7 @@ namespace Qz {
 		public void Init()
 		{
 			if (File.Exists(BankStateFile))
-				FillBank(BankStateFile);
+				Fill(BankStateFile);
 			else {
 				using (var rr = new ResourceReader("words.resources")) {
 					foreach (System.Collections.DictionaryEntry word in rr)
@@ -70,13 +70,13 @@ namespace Qz {
 
 		public void OnExit(object o, EventArgs e)
 		{
-			DumpBank(BankStateFile);
+			Dump(BankStateFile);
 		}
 
 		// A few sanity checks here would probably be wise here. Currently,
 		// we don't actually parse the file until we display the words. We
 		// should parse it here or at least make sure it's parsable.
-		public bool FillBank(string file)
+		public bool Fill(string file)
 		{
 			bank.Clear();
 
@@ -97,7 +97,7 @@ namespace Qz {
 			return true;
 		}
 
-		public bool DumpBank(string file)
+		public bool Dump(string file)
 		{
 			Check();
 
@@ -174,9 +174,8 @@ namespace Qz {
 			Meanings.Clear();
 
 			if (bank.Count != 0) {
-				int size = GroupSize;
 				using (var g = Program.Instance.CreateGraphics())
-					while (--size != -1 && bank.Count != 0)
+					while (words.Count != GroupSize && bank.Count != 0)
 						Next(g);
 				Reload();
 			}
@@ -409,13 +408,13 @@ namespace Qz {
 				file.AddSplit();
 
 				file.Put("Load Words...", Keys.Control | Keys.O, delegate {
-					ShowFileDialog(new OpenFileDialog(), WordBank.FillBank);
+					ShowFileDialog(new OpenFileDialog(), WordBank.Fill);
 				});
 
 				file.AddSplit();
 
 				file.Put("Save Remaining...", Keys.Control | Keys.S, delegate {
-					ShowFileDialog(new SaveFileDialog(), WordBank.DumpBank);
+					ShowFileDialog(new SaveFileDialog(), WordBank.Dump);
 				});
 
 				file.AddSplit();
