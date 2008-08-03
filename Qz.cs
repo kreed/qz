@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -34,7 +35,8 @@ namespace Qz {
 		private const string bankStateFile = "stored.txt";
 		public int Count;
 		public int GroupSize = 16;
-		private List<string> bank = new List<string>();
+		private List<KeyValuePair<string, string>> bank
+			= new List<KeyValuePair<string, string>>();
 		public List<Word> Words = new List<Word>();
 		public List<Meaning> Meanings = new List<Meaning>();
 
@@ -45,21 +47,34 @@ namespace Qz {
 			}
 		}
 
+		public string BankStateFile
+		{
+			get {
+				return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Qz.state");
+			}
+		}
+
+		public void Init()
+		{
+			if (File.Exists(BankStateFile))
+				FillBank(BankStateFile);
+		}
+
 		// A few sanity checks here would probably be wise here. Currently,
 		// we don't actually parse the file until we display the words. We
 		// should parse it here or at least make sure it's parsable.
 		public bool FillBank(string file)
 		{
-			if (file == null)
-				file = bankStateFile;
-
 			bank.Clear();
-			string line;
 
 			try {
-				using (var sr = new System.IO.StreamReader(file))
-					while ((line = sr.ReadLine()) != null)
-						bank.Add(line);
+				string line;
+				using (var sr = new StreamReader(file))
+					while ((line = sr.ReadLine()) != null) {
+						var toks = line.Split('\t');
+						if (toks.Length == 2)
+							bank.Add(new KeyValuePair<string, string>(toks[0], toks[1]));
+					}
 			} catch (Exception e) {
 				MessageBox.Show("Error reading word bank: " + e.Message);
 				return false;
@@ -73,13 +88,10 @@ namespace Qz {
 		{
 			Check();
 
-			if (file == null)
-				file = bankStateFile;
-
 			try {
 				using (var sw = new System.IO.StreamWriter(file)) {
 					foreach (var line in bank)
-						sw.WriteLine(line);
+						sw.WriteLine(line.Key + '\t' + line.Value);
 					foreach (var word in Words)
 						if (!word.Correct)
 							sw.WriteLine(word.Text + '\t' + word.Meaning.Text);
@@ -94,9 +106,9 @@ namespace Qz {
 
 		private void Next(Graphics g)
 		{
-			var line = bank.TakeAt(Util.Random.Next(bank.Count)).Split('\t');
-			var meaning = new Meaning(line[1], g, Meanings);
-			Words.Add(new Word(line[0], meaning, g));
+			var word = bank.TakeAt(Util.Random.Next(bank.Count));
+			var meaning = new Meaning(word.Value, g, Meanings);
+			Words.Add(new Word(word.Key, meaning, g));
 			Meanings.Add(meaning);
 		}
 
@@ -138,7 +150,7 @@ namespace Qz {
 				word.Meaning.Remove();
 				Words.Remove(word);
 				Meanings.Remove(word.Meaning);
-				bank.Add(word.Text + '\t' + word.Meaning.Text);
+				bank.Add(new KeyValuePair<string, string>(word.Text, word.Meaning.Text));
 				GroupSize = Words.Count;
 				Reload();
 			}
@@ -383,19 +395,13 @@ namespace Qz {
 
 				file.AddSplit();
 
-				file.Put("Load Remaining", Keys.Control | Keys.Shift | Keys.L, delegate {
-					WordBank.FillBank(null);
-				});
-				file.Put("Load Remaining From...", Keys.Control | Keys.O, delegate {
+				file.Put("Load Words...", Keys.Control | Keys.O, delegate {
 					ShowFileDialog(new OpenFileDialog(), WordBank.FillBank);
 				});
 
 				file.AddSplit();
 
-				file.Put("Save Remaining", Keys.Control | Keys.Shift | Keys.S, delegate {
-					WordBank.DumpBank(null);
-				});
-				file.Put("Save Remaining To...", Keys.Control | Keys.S, delegate {
+				file.Put("Save Remaining...", Keys.Control | Keys.S, delegate {
 					ShowFileDialog(new SaveFileDialog(), WordBank.DumpBank);
 				});
 
@@ -436,15 +442,14 @@ namespace Qz {
 
 			Controls.Add(menu);
 
-			if (!WordBank.FillBank("words.txt"))
-				ShowFileDialog(new OpenFileDialog(), WordBank.FillBank);
+			WordBank.Init();
 		}
 
 		private void ShowFileDialog(FileDialog dlg, Func<string, bool> cb)
 		{
-			dlg.DefaultExt = "*.*";
+			dlg.Filter = "Tab Separated Values|*.tsv";
 			dlg.RestoreDirectory = true;
-			if (dlg.ShowDialog() == DialogResult.OK)
+			if (dlg.ShowDialog(this) == DialogResult.OK)
 				cb(dlg.FileName);
 		}
 
@@ -601,11 +606,9 @@ namespace Qz {
 		public static ToolStripMenuItem Put(this ToolStripMenuItem menu,
 		                           string text, Keys sc, EventHandler e)
 		{
-			Console.WriteLine("trying " + text);
 			var item = new ToolStripMenuItem(text, null, e);
 			item.ShortcutKeys = sc;
 			menu.DropDownItems.Add(item);
-			Console.WriteLine("done");
 			return item;
 		}
 
