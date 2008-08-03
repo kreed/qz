@@ -24,6 +24,7 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -32,12 +33,57 @@ using System.Resources;
 using System.Windows.Forms;
 
 namespace Qz {
+	// note: this modifies the list, so it's not really an enumerator (I guess)
+	class RandomEnumerator<T> : IEnumerator<T> {
+		List<T> list;
+		T e;
+
+		public RandomEnumerator(IList<T> list)
+		{
+			this.list = new List<T>(list);
+		}
+
+		public T Current
+		{
+			get {
+				return e;
+			}
+		}
+
+		object IEnumerator.Current
+		{
+			get {
+				return e;
+			}
+		}
+
+		public bool MoveNext()
+		{
+			if (list.Count == 0)
+				return false;
+			e = list.Next();
+			return true;
+		}
+
+		public void Reset()
+		{
+		}
+
+		public void Dispose()
+		{
+		}
+	}
+
 	class Bank {
-		public int GroupSize = 16;
 		private List<KeyValuePair<string, string>> bank
 			= new List<KeyValuePair<string, string>>();
+
 		public List<Word> Words = new List<Word>();
 		public List<Meaning> Meanings = new List<Meaning>();
+
+		public int GroupSize = 16;
+		public bool OrderWords = true;
+		public bool OrderMeanings;
 
 		public bool Finished
 		{
@@ -58,10 +104,9 @@ namespace Qz {
 			if (File.Exists(BankStateFile))
 				Fill(BankStateFile);
 			else {
-				using (var rr = new ResourceReader("words.resources")) {
+				using (var rr = new ResourceReader("words.resources"))
 					foreach (System.Collections.DictionaryEntry word in rr)
 						bank.Add(new KeyValuePair<string, string>((string)word.Key, (string)word.Value));
-				}
 				NextGroup();
 			}
 
@@ -119,7 +164,7 @@ namespace Qz {
 
 		private void Next(Graphics g)
 		{
-			var word = bank.TakeAt(Util.Random.Next(bank.Count));
+			var word = bank.Next();
 			var meaning = new Meaning(word.Value, g, Meanings);
 			Words.Add(new Word(word.Key, meaning, g));
 			Meanings.Add(meaning);
@@ -132,16 +177,11 @@ namespace Qz {
 			return wrong == 0;
 		}
 
-		public void Shuffle()
+		public void Reload()
 		{
-			Meanings.Shuffle(Words.CalcRightEdge() + 5);
-			Check();
-		}
-
-		private void Reload()
-		{
-			int edge = Words.Order() + 5;
-			Meanings.Shuffle(edge);
+			int edge = Words.CalcRightEdge() + 5;
+			Words.Layout(OrderWords, edge);
+			Meanings.Layout(OrderMeanings, edge);
 			Check();
 		}
 
@@ -175,7 +215,7 @@ namespace Qz {
 
 			if (bank.Count != 0) {
 				using (var g = Program.Instance.CreateGraphics())
-					while (words.Count != GroupSize && bank.Count != 0)
+					while (Words.Count != GroupSize && bank.Count != 0)
 						Next(g);
 				Reload();
 			}
@@ -193,6 +233,19 @@ namespace Qz {
 				g.DrawString(tile.Text, Program.FontFace, tile.Correct ?
 				             CorrectBrush : Brushes.Black,
 				             tile.Rect.Location);
+		}
+
+		public static void Layout<T>(this List<T> current, bool order, int margin) where T : Tile
+		{
+			if (order)
+				current.Sort();
+			var e = order ? (IEnumerator<T>)current.GetEnumerator()
+			              : new RandomEnumerator<T>(current);
+
+			for (int y = 25; e.MoveNext(); y += LineHeight) {
+				e.Current.X = margin;
+				e.Current.Rect.Y = y;
+			}
 		}
 	}
 
@@ -251,20 +304,6 @@ namespace Qz {
 			return (int)current.LongCount(word => !word.TestCorrect());
 		}
 
-		public static int Order(this List<Word> current)
-		{
-			current.Sort();
-
-			int right = current.CalcRightEdge();
-			int y = -15;
-			foreach (var word in current) {
-				word.Rect.X = right - word.Rect.Width;
-				word.Rect.Y = y += TileCollection.LineHeight;
-			}
-
-			return right;
-		}
-
 		public static int CalcRightEdge(this List<Word> current)
 		{
 			return current.Max((Func<Word, int>)(word => word.Rect.Width));
@@ -299,16 +338,6 @@ namespace Qz {
 			return current.FirstOrDefault(def =>
 			                              def.Rect.Contains(loc)
 			                              && !def.Correct);
-		}
-
-		public static void Shuffle<T>(this List<T> current, int offset) where T : Tile
-		{
-			var rands = new List<T>(current);
-			for (int y = 25; rands.Count != 0; y += TileCollection.LineHeight) {
-				var def = rands.TakeAt(Util.Random.Next(rands.Count));
-				def.Rect.X = offset;
-				def.Rect.Y = y;
-			}
 		}
 	}
 
@@ -441,8 +470,21 @@ namespace Qz {
 
 				view.AddSplit();
 
-				view.Put("Shuffle Meanings", Keys.Control | Keys.R, delegate {
-					ShuffleDefs();
+				var words = view.Put("Shuffle Words", Keys.None, delegate {
+					WordBank.OrderWords = !WordBank.OrderWords;
+					Relayout();
+				});
+				var defs = view.Put("Shuffle Meanings", Keys.None, delegate {
+					WordBank.OrderMeanings = !WordBank.OrderMeanings;
+					Relayout();
+				});
+				words.CheckOnClick = defs.CheckOnClick = true;
+				defs.Checked = true;
+
+				view.AddSplit();
+
+				view.Put("Relayout", Keys.Control | Keys.R, delegate {
+					Relayout();
 				});
 				view.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
 					hideDefs = !hideDefs;
@@ -469,9 +511,9 @@ namespace Qz {
 				cb(dlg.FileName);
 		}
 
-		private void ShuffleDefs()
+		private void Relayout()
 		{
-			WordBank.Shuffle();
+			WordBank.Reload();
 			proceed = false;
 		}
 
@@ -616,15 +658,7 @@ namespace Qz {
 	}
 
 	static class Util {
-		public static Random Random = new Random();
-
-		// Why doesn't .NET have a take method? :-/
-		public static T TakeAt<T>(this IList<T> l, int i)
-		{
-			var e = l[i];
-			l.RemoveAt(i);
-			return e;
-		}
+		public readonly static Random Random = new Random();
 
 		public static ToolStripMenuItem Put(this ToolStripMenuItem menu,
 		                           string text, Keys sc, EventHandler e)
@@ -638,6 +672,18 @@ namespace Qz {
 		public static void AddSplit(this ToolStripMenuItem menu)
 		{
 			menu.DropDownItems.Add(new ToolStripSeparator());
+		}
+
+		public static T TakeAt<T>(this IList<T> list, int i)
+		{
+			var e = list[i];
+			list.RemoveAt(i);
+			return e;
+		}
+
+		public static T Next<T>(this IList<T> list)
+		{
+			return list.TakeAt(Random.Next(list.Count));
 		}
 	}
 }
