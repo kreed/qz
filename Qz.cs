@@ -32,6 +32,8 @@ using System.Linq;
 using System.Resources;
 using System.Windows.Forms;
 
+using Entry = System.Collections.Generic.KeyValuePair<string, string>;
+
 namespace Qz {
 	// note: this modifies the list, so it's not really an enumerator (I guess)
 	class RandomEnumerator<T> : IEnumerator<T> {
@@ -75,8 +77,7 @@ namespace Qz {
 	}
 
 	class Bank {
-		private List<KeyValuePair<string, string>> bank
-			= new List<KeyValuePair<string, string>>();
+		private List<Entry> bank = new List<Entry>();
 
 		public List<Word> Words = new List<Word>();
 		public List<Meaning> Meanings = new List<Meaning>();
@@ -106,7 +107,7 @@ namespace Qz {
 			else {
 				using (var rr = new ResourceReader("words.resources"))
 					foreach (System.Collections.DictionaryEntry word in rr)
-						bank.Add(new KeyValuePair<string, string>((string)word.Key, (string)word.Value));
+						bank.Add(new Entry((string)word.Key, (string)word.Value));
 				NextGroup();
 			}
 
@@ -131,7 +132,7 @@ namespace Qz {
 					while ((line = sr.ReadLine()) != null) {
 						var toks = line.Split('\t');
 						if (toks.Length == 2)
-							bank.Add(new KeyValuePair<string, string>(toks[0], toks[1]));
+							bank.Add(new Entry(toks[0], toks[1]));
 					}
 			} catch (Exception e) {
 				MessageBox.Show("Error reading word bank: " + e.Message);
@@ -202,7 +203,7 @@ namespace Qz {
 				word.Meaning.Remove();
 				Words.Remove(word);
 				Meanings.Remove(word.Meaning);
-				bank.Add(new KeyValuePair<string, string>(word.Text, word.Meaning.Text));
+				bank.Add(new Entry(word.Text, word.Meaning.Text));
 				GroupSize = Words.Count;
 				Reload();
 			}
@@ -255,7 +256,7 @@ namespace Qz {
 
 		private Tile pair;
 
-		public virtual bool Correct
+		public bool Correct
 		{
 			get {
 				return pair != null;
@@ -386,10 +387,8 @@ namespace Qz {
 		bool proceed;
 		Meaning moving;
 		Point lastLoc;
-
-		MouseEventHandler motion;
-		ToolStripStatusLabel count;
 		int scrollOffset;
+		ToolStripStatusLabel count;
 		Timer scrollTimer;
 
 		bool hideDefs;
@@ -416,10 +415,9 @@ namespace Qz {
 			scrollTimer.Interval = 50;
 			scrollTimer.Tick += new EventHandler(DragScroll);
 
-			KeyDown += new KeyEventHandler(OnKeyDown);
-			MouseUp += new MouseEventHandler(OnMouseUp);
-			MouseDown += new MouseEventHandler(OnMouseDown);
-			motion = new MouseEventHandler(OnMouseMove);
+			KeyDown += OnKeyDown;
+			MouseUp += OnMouseUp;
+			MouseDown += OnMouseDown;
 
 			var menu = new MenuStrip();
 			MainMenuStrip = menu;
@@ -437,13 +435,13 @@ namespace Qz {
 				file.AddSplit();
 
 				file.Put("Load Words...", Keys.Control | Keys.O, delegate {
-					ShowFileDialog(new OpenFileDialog(), WordBank.Fill);
+					ShowFileDialog<OpenFileDialog>(WordBank.Fill);
 				});
 
 				file.AddSplit();
 
 				file.Put("Save Remaining...", Keys.Control | Keys.S, delegate {
-					ShowFileDialog(new SaveFileDialog(), WordBank.Dump);
+					ShowFileDialog<SaveFileDialog>(WordBank.Dump);
 				});
 
 				file.AddSplit();
@@ -503,8 +501,10 @@ namespace Qz {
 			WordBank.Init();
 		}
 
-		private void ShowFileDialog(FileDialog dlg, Func<string, bool> cb)
+		private void ShowFileDialog<T>(Func<string, bool> cb)
+			where T : FileDialog, new()
 		{
+			var dlg = new T();
 			dlg.Filter = "Tab Separated Values|*.tsv";
 			dlg.RestoreDirectory = true;
 			if (dlg.ShowDialog(this) == DialogResult.OK)
@@ -597,7 +597,7 @@ namespace Qz {
 				moving = WordBank.Meanings.FindContainer(e.Location);
 
 				if (moving != null) {
-					MouseMove += motion;
+					MouseMove += OnMouseMove;
 					lastLoc = e.Location;
 				}
 			}
@@ -606,7 +606,7 @@ namespace Qz {
 		private void OnMouseUp(object sender, MouseEventArgs e)
 		{
 			if (moving != null && e.Button == MouseButtons.Left) {
-				MouseMove -= motion;
+				MouseMove -= OnMouseMove;
 				moving = null;
 				scrollTimer.Enabled = false;
 
