@@ -521,6 +521,9 @@ namespace Qz {
 		private void OnKeyDown(object sender, KeyEventArgs e)
 		{
 			switch (e.KeyCode) {
+			case Keys.Space:
+				Check();
+				break;
 			case Keys.Add:
 			case Keys.Oemplus:
 				WordBank.AddRandom();
