@@ -629,12 +629,12 @@ namespace Qz {
 
 		private void MoveBy(int x, int y)
 		{
-			var update = new Region(moving.Rect);
+			var update = moving.Rect;
 			moving.Rect.X += x;
 			moving.Rect.Y += y;
 			moving.Moved = true;
-			update.Union(moving.Rect);
-			update.Translate(0, AutoScrollPosition.Y);
+			update = Rectangle.Union(update, moving.Rect);
+			update.Offset(AutoScrollPosition);
 			Invalidate(update);
 		}
 
