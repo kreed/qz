@@ -526,18 +526,9 @@ namespace Qz {
 			}
 		}
 
-		[DllImport("user32.dll")]
-		private static extern int SetScrollPos(IntPtr hWnd, int nBar, int nPos, bool bRedraw);
-
-		// Why there is not a method that both moves the scrollbar _and_ client
-		// area escapes me...
-		//
-		// FIXME: make this work in the Mono runtime at some point
 		public void VScrollBy(int v)
 		{
-			v = AutoScrollPosition.Y - v;
-			SetDisplayRectLocation(0, v);
-			SetScrollPos(Handle, 0x1, -v, true);
+			AutoScrollPosition = new Point(0, -AutoScrollPosition.Y + v);
 		}
 
 		private void OnMouseDown(object sender, MouseEventArgs e)
