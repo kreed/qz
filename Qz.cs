@@ -27,7 +27,6 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace Qz {
@@ -337,8 +336,6 @@ namespace Qz {
 		Point lastLoc;
 
 		MouseEventHandler motion;
-		MenuItem toggleAC;
-		MenuItem toggleDefs;
 		int scrollOffset;
 		Timer scrollTimer;
 
@@ -356,7 +353,7 @@ namespace Qz {
 
 			Text = "Qz";
 			BackColor = Color.White;
-			Size = new Size(500, 700);
+			Size = new Size(500, 710);
 			AutoScroll = true;
 
 			SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
@@ -371,60 +368,73 @@ namespace Qz {
 			MouseDown += new MouseEventHandler(OnMouseDown);
 			motion = new MouseEventHandler(OnMouseMove);
 
-			Menu = new MainMenu();
+			var menu = new MenuStrip();
+			MainMenuStrip = menu;
 
 			{
-				var file = Menu.Put("File");
+				var file = new ToolStripMenuItem("File");
 
-				file.Put("Check/Advance\tSpace", delegate { Check(); });
-				toggleAC = file.Put("Check Automatically", delegate {
-					toggleAC.Checked = autoCheck = !autoCheck;
-				});
+				file.Put("Check/Advance", Keys.None, delegate {
+					Check();
+				}).ShortcutKeyDisplayString = "Space";
+				file.Put("Check Automatically", Keys.None, delegate {
+					autoCheck = !autoCheck;
+				}).CheckOnClick = true;
 
-				file.Put("-");
+				file.AddSplit();
 
-				file.Put("Load Remaining\tL", delegate {
+				file.Put("Load Remaining", Keys.Control | Keys.Shift | Keys.L, delegate {
 					WordBank.FillBank(null);
 				});
-				file.Put("Load Remaining From...", Shortcut.CtrlO, delegate {
+				file.Put("Load Remaining From...", Keys.Control | Keys.O, delegate {
 					ShowFileDialog(new OpenFileDialog(), WordBank.FillBank);
 				});
 
-				file.Put("-");
+				file.AddSplit();
 
-				file.Put("Save Remaining\tD", delegate {
+				file.Put("Save Remaining", Keys.Control | Keys.Shift | Keys.S, delegate {
 					WordBank.DumpBank(null);
 				});
-				file.Put("Save Remaining To...", Shortcut.CtrlS, delegate {
+				file.Put("Save Remaining To...", Keys.Control | Keys.S, delegate {
 					ShowFileDialog(new SaveFileDialog(), WordBank.DumpBank);
 				});
 
-				file.Put("-");
+				file.AddSplit();
 
-				file.Put("Quit", Shortcut.CtrlQ, delegate {
+				file.Put("Quit", Keys.Control | Keys.Q, delegate {
 					Application.Exit();
 				});
+
+				menu.Items.Add(file);
 			}
 
 			{
-				var view = Menu.Put("View");
+				var view = new ToolStripMenuItem("View");
 
-				view.Put("Fewer\t-", delegate {
+				// There doesn't seem to be a good constant for plus/minus
+				// (You have to use two for each, and both of those display
+				// their names instead of their symbols in the menu)
+				view.Put("Fewer", Keys.None, delegate {
 					WordBank.RestoreLast();
-				});
-				view.Put("More\t+", delegate {
+				}).ShortcutKeyDisplayString = "-";
+				view.Put("More", Keys.None, delegate {
 					WordBank.AddRandom();
-				});
+				}).ShortcutKeyDisplayString = "+";
 
-				view.Put("-");
+				view.AddSplit();
 
-				view.Put("Shuffle Meanings\tS", delegate {
+				view.Put("Shuffle Meanings", Keys.Control | Keys.R, delegate {
 					ShuffleDefs();
 				});
-				toggleDefs = view.Put("Hide Meanings\tH", delegate {
-					ToggleDefs();
-				});
+				view.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
+					hideDefs = !hideDefs;
+					Invalidate();
+				}).CheckOnClick = true;
+
+				menu.Items.Add(view);
 			}
+
+			Controls.Add(menu);
 
 			if (!WordBank.FillBank("words.txt"))
 				ShowFileDialog(new OpenFileDialog(), WordBank.FillBank);
@@ -436,12 +446,6 @@ namespace Qz {
 			dlg.RestoreDirectory = true;
 			if (dlg.ShowDialog() == DialogResult.OK)
 				cb(dlg.FileName);
-		}
-
-		private void ToggleDefs()
-		{
-			toggleDefs.Checked = hideDefs = !hideDefs;
-			Invalidate();
 		}
 
 		private void ShuffleDefs()
@@ -492,28 +496,13 @@ namespace Qz {
 		private void OnKeyDown(object sender, KeyEventArgs e)
 		{
 			switch (e.KeyCode) {
-			case Keys.Space:
-				Check();
-				break;
-			case Keys.Oemplus:
 			case Keys.Add:
+			case Keys.Oemplus:
 				WordBank.AddRandom();
 				break;
-			case Keys.OemMinus:
 			case Keys.Subtract:
+			case Keys.OemMinus:
 				WordBank.RestoreLast();
-				break;
-			case Keys.H:
-				ToggleDefs();
-				break;
-			case Keys.S:
-				ShuffleDefs();
-				break;
-			case Keys.D:
-				WordBank.DumpBank(null);
-				break;
-			case Keys.L:
-				WordBank.FillBank(null);
 				break;
 			case Keys.J:
 			case Keys.Down:
@@ -609,23 +598,20 @@ namespace Qz {
 			return e;
 		}
 
-		public static MenuItem Put(this Menu menu, string text,
-		                           EventHandler e)
+		public static ToolStripMenuItem Put(this ToolStripMenuItem menu,
+		                           string text, Keys sc, EventHandler e)
 		{
-			return menu.Put(text, Shortcut.None, e);
-		}
-
-		public static MenuItem Put(this Menu menu, string text,
-		                           Shortcut sc, EventHandler e)
-		{
-			var item = new MenuItem(text, e, sc);
-			menu.MenuItems.Add(item);
+			Console.WriteLine("trying " + text);
+			var item = new ToolStripMenuItem(text, null, e);
+			item.ShortcutKeys = sc;
+			menu.DropDownItems.Add(item);
+			Console.WriteLine("done");
 			return item;
 		}
 
-		public static MenuItem Put(this Menu menu, string text)
+		public static void AddSplit(this ToolStripMenuItem menu)
 		{
-			return menu.Put(text, Shortcut.None, null);
+			menu.DropDownItems.Add(new ToolStripSeparator());
 		}
 	}
 }
