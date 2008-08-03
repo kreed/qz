@@ -315,6 +315,7 @@ namespace Qz {
 
 	class Meaning : Tile {
 		public Meaning Next;
+		public bool Moved;
 
 		public Meaning(string text, Graphics g, List<Meaning> current)
 			: base(text, g)
@@ -329,8 +330,8 @@ namespace Qz {
 
 		public Meaning GetCorrect(Word word)
 		{
-			if (word.Rect.Y - 15 < Rect.Y
-			 && word.Rect.Y + 25 > Rect.Y)
+			if (Moved && word.Rect.Y - 15 < Rect.Y
+			          && word.Rect.Y + 25 > Rect.Y)
 				return this;
 			if (word.Meaning.Equals(Next))
 				return null;
@@ -587,6 +588,7 @@ namespace Qz {
 			var update = new Region(moving.Rect);
 			moving.Rect.X += x;
 			moving.Rect.Y += y;
+			moving.Moved = true;
 			update.Union(moving.Rect);
 			update.Translate(0, AutoScrollPosition.Y);
 			Invalidate(update);
