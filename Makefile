@@ -2,7 +2,7 @@
 #
 LIBS=System.Windows.Forms,System.Drawing
 RES=-resource:words.txt
-SRCS=Qz.cs
+SRCS=Qz.cs Util.cs Bank.cs Tile.cs Word.cs Meaning.cs
 
 CSC=gmcs -r:$(LIBS) $(RES) $(SRCS)
 
