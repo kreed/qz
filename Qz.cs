@@ -104,11 +104,8 @@ namespace Qz {
 
 		public void Init()
 		{
-			if (!File.Exists(BankStateFile) || !Fill(BankStateFile)) {
-				var a = System.Reflection.Assembly.GetExecutingAssembly();
-				Fill(bank, a.GetManifestResourceStream("words.txt"));
-				NextGroup();
-			}
+			if (!File.Exists(BankStateFile) || !Fill(BankStateFile))
+				FillFromEmbed();
 
 			Application.ApplicationExit += OnExit;
 		}
@@ -137,6 +134,14 @@ namespace Qz {
 						bank.Add(new Entry(toks[0], toks[1]));
 				}
 			stream.Close();
+		}
+
+		public void FillFromEmbed()
+		{
+			bank.Clear();
+			var a = System.Reflection.Assembly.GetExecutingAssembly();
+			Fill(bank, a.GetManifestResourceStream("words.txt"));
+			NextGroup();
 		}
 
 		public bool Fill(string file)
@@ -449,6 +454,9 @@ namespace Qz {
 				});
 				file.Put("Load Previous Session", Keys.None, delegate {
 					WordBank.Fill(WordBank.BankStateFile);
+				});
+				file.Put("Load Embedded Words", Keys.None,  delegate {
+					WordBank.FillFromEmbed();
 				});
 
 				file.AddSplit();
