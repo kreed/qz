@@ -150,8 +150,6 @@ namespace Qz {
 
 		public bool Dump(string file)
 		{
-			Check();
-
 			try {
 				using (var sw = new System.IO.StreamWriter(file)) {
 					foreach (var line in bank)
