@@ -476,7 +476,11 @@ namespace Qz {
 					WordBank.OrderMeanings = !WordBank.OrderMeanings;
 					Relayout();
 				});
-				words.CheckOnClick = defs.CheckOnClick = true;
+				var hide = view.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
+					hideDefs = !hideDefs;
+					Invalidate();
+				});
+				hide.CheckOnClick = words.CheckOnClick = defs.CheckOnClick = true;
 				defs.Checked = true;
 
 				view.AddSplit();
@@ -484,10 +488,6 @@ namespace Qz {
 				view.Put("Relayout", Keys.Control | Keys.R, delegate {
 					Relayout();
 				});
-				view.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
-					hideDefs = !hideDefs;
-					Invalidate();
-				}).CheckOnClick = true;
 
 				menu.Items.Add(view);
 			}
