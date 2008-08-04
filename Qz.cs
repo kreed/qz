@@ -132,7 +132,7 @@ namespace Qz {
 		// should parse it here or at least make sure it's parsable.
 		public bool Fill(string file)
 		{
-			bank.Clear();
+			var newBank = new List<Entry>();
 
 			try {
 				string line;
@@ -140,13 +140,14 @@ namespace Qz {
 					while ((line = sr.ReadLine()) != null) {
 						var toks = line.Split('\t');
 						if (toks.Length == 2)
-							bank.Add(new Entry(toks[0], toks[1]));
+							newBank.Add(new Entry(toks[0], toks[1]));
 					}
 			} catch (Exception e) {
 				MessageBox.Show("Error reading word bank: " + e.Message);
 				return false;
 			}
 
+			bank = newBank;
 			NextGroup();
 			return true;
 		}
