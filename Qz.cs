@@ -82,6 +82,8 @@ namespace Qz {
 		public List<Word> Words = new List<Word>();
 		public List<Meaning> Meanings = new List<Meaning>();
 
+		public int Remaining;
+
 		public int GroupSize = 16;
 		public bool OrderWords = true;
 		public bool OrderMeanings;
@@ -119,7 +121,10 @@ namespace Qz {
 
 		public void OnExit(object o, EventArgs e)
 		{
-			Dump(BankStateFile);
+			if (Remaining == 0 && File.Exists(BankStateFile))
+				File.Delete(BankStateFile);
+			else
+				Dump(BankStateFile);
 		}
 
 		// A few sanity checks here would probably be wise here. Currently,
@@ -175,7 +180,8 @@ namespace Qz {
 		public bool Check()
 		{
 			int wrong = Words.TestWrong();
-			Program.Instance.UpdateCount(Words.Count - wrong, wrong + bank.Count);
+			Remaining = wrong + bank.Count;
+			Program.Instance.UpdateCount(Words.Count - wrong, Remaining);
 			return wrong == 0;
 		}
 
