@@ -254,6 +254,18 @@ namespace Qz {
 				e.Current.Rect.Y = y;
 			}
 		}
+
+		public static int CalcRightEdge<T>(this List<T> current) where T : Tile
+		{
+			return current.Max((Func<T, int>)(tile => tile.Rect.Width));
+		}
+
+		public static T FindContainer<T>(this List<T> current, Point loc) where T : Tile
+		{
+			return current.FirstOrDefault(tile =>
+			                              tile.Rect.Contains(loc)
+			                              && !tile.Correct);
+		}
 	}
 
 	class Tile : IComparable {
@@ -310,11 +322,6 @@ namespace Qz {
 			// ignores it because it has the same name as a property. . .
 			return (int)current.LongCount(word => !word.TestCorrect());
 		}
-
-		public static int CalcRightEdge(this List<Word> current)
-		{
-			return current.Max((Func<Word, int>)(word => word.Rect.Width));
-		}
 	}
 
 	class Word : Tile {
@@ -336,15 +343,6 @@ namespace Qz {
 		public bool TestCorrect()
 		{
 			return Pair(Meaning.GetCorrect(this)) != null;
-		}
-	}
-
-	static class MeaningCollection {
-		public static Meaning FindContainer(this List<Meaning> current, Point loc)
-		{
-			return current.FirstOrDefault(def =>
-			                              def.Rect.Contains(loc)
-			                              && !def.Correct);
 		}
 	}
 
