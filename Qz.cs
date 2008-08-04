@@ -200,10 +200,11 @@ namespace Qz {
 		{
 			if (Words.Count > 1) {
 				var word = Words.TakeAt(Words.Count - 1);
+				if (!word.Correct)
+					bank.Add(new Entry(word.Text, word.Meaning.Text));
 				word.Meaning.Remove();
 				Words.Remove(word);
 				Meanings.Remove(word.Meaning);
-				bank.Add(new Entry(word.Text, word.Meaning.Text));
 				GroupSize = Words.Count;
 				Reload();
 			}
