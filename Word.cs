@@ -25,6 +25,7 @@
 
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 namespace Qz {
 	static class WordCollection {
