@@ -34,15 +34,20 @@ namespace Qz {
 			new SolidBrush(Color.FromArgb(85, Color.Green));
 		public const int LineHeight = 40;
 
-		public static void Paint<T>(this List<T> tiles, Graphics g) where T : Tile
+		public static void PaintTiles<T>(this Graphics g, List<T> tiles,
+		                                 bool expose)
+			where T : Tile
 		{
 			foreach (var tile in tiles)
-				g.DrawString(tile.Text, Program.FontFace, tile.Correct ?
+				g.DrawString(tile.Text, Program.FontFace,
+				             tile.Correct && expose ?
 				             CorrectBrush : Brushes.Black,
 				             tile.Rect.Location);
 		}
 
-		public static void Layout<T>(this List<T> current, bool order, int margin) where T : Tile
+		public static void Layout<T>(this List<T> current, bool order,
+		                             int margin)
+			where T : Tile
 		{
 			if (order)
 				current.Sort();
@@ -55,16 +60,19 @@ namespace Qz {
 			}
 		}
 
-		public static int CalcRightEdge<T>(this List<T> current) where T : Tile
+		public static int CalcRightEdge<T>(this List<T> current)
+			where T : Tile
 		{
 			return current.Max((Func<T, int>)(tile => tile.Rect.Width));
 		}
 
-		public static T FindContainer<T>(this List<T> current, Point loc) where T : Tile
+		public static T FindContainer<T>(this List<T> current,
+		                                 Point loc, bool ignore)
+			where T : Tile
 		{
 			return current.FirstOrDefault(tile =>
 			                              tile.Rect.Contains(loc)
-			                              && !tile.Correct);
+			                              && !(tile.Correct && ignore));
 		}
 	}
 

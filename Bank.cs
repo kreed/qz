@@ -39,6 +39,7 @@ namespace Qz {
 		public List<Word> Words = new List<Word>();
 		public List<Meaning> Meanings = new List<Meaning>();
 
+		public int Correct;
 		public int Remaining;
 
 		public int GroupSize = 16;
@@ -147,7 +148,8 @@ namespace Qz {
 		{
 			int wrong = Words.TestWrong();
 			Remaining = wrong + bank.Count;
-			Program.Instance.UpdateCount(Words.Count - wrong, Remaining);
+			Correct = Words.Count - wrong;
+			Program.Instance.UpdateCount();
 			return wrong == 0;
 		}
 

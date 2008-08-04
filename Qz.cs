@@ -24,6 +24,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -39,11 +40,12 @@ namespace Qz {
 		Meaning moving;
 		Point lastLoc;
 		int scrollOffset;
-		ToolStripStatusLabel count;
 		Timer scrollTimer;
+		ToolStripStatusLabel count;
 
 		bool hideDefs;
 		bool autoCheck;
+		bool showCorrect = true;
 
 		static void Main()
 		{
@@ -140,11 +142,16 @@ namespace Qz {
 					WordBank.OrderMeanings = !WordBank.OrderMeanings;
 					Relayout();
 				});
-				var hide = view.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
+				var hd = view.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
 					hideDefs = !hideDefs;
 					Invalidate();
 				});
-				hide.CheckOnClick = words.CheckOnClick = defs.CheckOnClick = true;
+				var hc = view.Put("Hide Correctness", Keys.None, delegate {
+					showCorrect = !showCorrect;
+					UpdateCount();
+				});
+				hd.CheckOnClick = words.CheckOnClick
+					= defs.CheckOnClick = hc.CheckOnClick = true;
 				defs.Checked = true;
 
 				view.AddSplit();
@@ -182,9 +189,10 @@ namespace Qz {
 			proceed = false;
 		}
 
-		public void UpdateCount(int active, int bank)
+		public void UpdateCount()
 		{
-			count.Text = String.Format("{0}/{1}", active, bank);
+			count.Text = showCorrect ? String.Format("{0}/{1}", WordBank.Correct, WordBank.Remaining)
+			                         : (WordBank.Correct + WordBank.Remaining).ToString();
 			Invalidate();
 		}
 
@@ -199,14 +207,14 @@ namespace Qz {
 				                      TextFormatFlags.VerticalCenter);
 			} else {
 				AutoScrollMinSize
-					= new Size(0, WordBank.GroupSize * TileCollection.LineHeight + 10);
+					= new Size(0, WordBank.Words.Count * TileCollection.LineHeight + 10);
 
 				var g = e.Graphics;
 				g.TranslateTransform(0, AutoScrollPosition.Y);
 
-				WordBank.Words.Paint(g);
+				g.PaintTiles(WordBank.Words, showCorrect || proceed);
 				if (!hideDefs)
-					WordBank.Meanings.Paint(g);
+					g.PaintTiles(WordBank.Meanings, showCorrect || proceed);
 			}
 		}
 
@@ -259,7 +267,8 @@ namespace Qz {
 			if (e.Button == MouseButtons.Left) {
 				var loc = e.Location;
 				loc.Y -= AutoScrollPosition.Y;
-				moving = WordBank.Meanings.FindContainer(e.Location);
+				moving = WordBank.Meanings
+					.FindContainer(e.Location, showCorrect || proceed);
 
 				if (moving != null) {
 					MouseMove += OnMouseMove;
