@@ -180,9 +180,9 @@ namespace Qz {
 
 		public void Reload()
 		{
-			int edge = Words.CalcRightEdge() + 5;
-			Words.Layout(OrderWords, edge);
-			Meanings.Layout(OrderMeanings, edge);
+			int edge = Words.CalcRightEdge();
+			Words.Layout(OrderWords, edge + 5);
+			Meanings.Layout(OrderMeanings, edge + 10);
 			Check();
 		}
 
@@ -224,7 +224,7 @@ namespace Qz {
 	}
 
 	static class TileCollection {
-		public static SolidBrush CorrectBrush =
+		public readonly static SolidBrush CorrectBrush =
 			new SolidBrush(Color.FromArgb(85, Color.Green));
 		public const int LineHeight = 40;
 
@@ -317,7 +317,7 @@ namespace Qz {
 		public override int X
 		{
 			set {
-				Rect.X = value - Rect.Width - 5;
+				Rect.X = value - Rect.Width;
 			}
 		}
 
