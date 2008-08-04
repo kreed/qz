@@ -102,7 +102,7 @@ namespace Qz {
 
 		public void Init()
 		{
-			if (File.Exists(BankStateFile) && !Fill(BankStateFile)) {
+			if (!File.Exists(BankStateFile) && !Fill(BankStateFile)) {
 				using (var rr = new ResourceReader("words.resources"))
 					foreach (System.Collections.DictionaryEntry word in rr)
 						bank.Add(new Entry((string)word.Key, (string)word.Value));
