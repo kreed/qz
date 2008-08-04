@@ -111,7 +111,12 @@ namespace Qz {
 				NextGroup();
 			}
 
-			Application.ApplicationExit += new EventHandler(OnExit);
+			Application.ApplicationExit += OnExit;
+		}
+
+		public void NoSave()
+		{
+			Application.ApplicationExit -= OnExit;
 		}
 
 		public void OnExit(object o, EventArgs e)
@@ -438,16 +443,26 @@ namespace Qz {
 				file.Put("Load Words...", Keys.Control | Keys.O, delegate {
 					ShowFileDialog<OpenFileDialog>(WordBank.Fill);
 				});
+				file.Put("Load Previous Session", Keys.None, delegate {
+					WordBank.Fill(WordBank.BankStateFile);
+				});
 
 				file.AddSplit();
 
 				file.Put("Save Remaining...", Keys.Control | Keys.S, delegate {
 					ShowFileDialog<SaveFileDialog>(WordBank.Dump);
 				});
+				file.Put("Save Session Now", Keys.None, delegate {
+					WordBank.Dump(WordBank.BankStateFile);
+				});
 
 				file.AddSplit();
 
-				file.Put("Quit", Keys.Control | Keys.Q, delegate {
+				file.Put("Quit, Saving Session", Keys.Control | Keys.Q, delegate {
+					Application.Exit();
+				});
+				file.Put("Quit, Discarding Session", Keys.Shift | Keys.Control | Keys.Q, delegate {
+					WordBank.NoSave();
 					Application.Exit();
 				});
 
