@@ -31,9 +31,9 @@ namespace Qz {
 	static class WordCollection {
 		public static int TestWrong(this List<Word> current)
 		{
-			// It would be better to use Count(), but Mono (as of 1.9.1)
-			// ignores it because it has the same name as a property. . .
-			return (int)current.LongCount(word => !word.TestCorrect());
+			// Mono (as of 1.9.1) ignores extension methods with the same name
+			// as properties, so we have to call this as a static method.
+			return Enumerable.Count(current, word => !word.TestCorrect());
 		}
 	}
 
