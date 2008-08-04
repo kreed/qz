@@ -1,24 +1,20 @@
 # Is there a good, simple build system for Mono?
 #
 LIBS=-r:System.Windows.Forms -r:System.Drawing
-RES=-resource:words.resources
+RES=-resource:words.txt
 SRCS=Qz.cs
 
 CSC=gmcs $(LIBS) $(RES) $(SRCS)
 
-Qz.exe: $(SRCS) words.resources
+Qz.exe: $(SRCS) words.txt
 	$(CSC) -o+ -t:winexe
-
-words.resources: words.txt
-	resgen2 -compile words.txt
-
 
 .PHONY: debug clean all
 
-debug: words.resources
+debug: words.txt
 	$(CSC) -debug+
 
 clean:
-	rm -f Qz.exe words.resources
+	rm -f Qz.exe
 
 all: clean Qz.exe

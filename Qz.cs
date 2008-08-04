@@ -105,9 +105,8 @@ namespace Qz {
 		public void Init()
 		{
 			if (!File.Exists(BankStateFile) || !Fill(BankStateFile)) {
-				using (var rr = new ResourceReader("words.resources"))
-					foreach (System.Collections.DictionaryEntry word in rr)
-						bank.Add(new Entry((string)word.Key, (string)word.Value));
+				var a = System.Reflection.Assembly.GetExecutingAssembly();
+				Fill(bank, a.GetManifestResourceStream("words.txt"));
 				NextGroup();
 			}
 
@@ -121,27 +120,31 @@ namespace Qz {
 
 		public void OnExit(object o, EventArgs e)
 		{
-			if (Remaining == 0 && File.Exists(BankStateFile))
-				File.Delete(BankStateFile);
-			else
+			if (Remaining == 0) {
+				if (File.Exists(BankStateFile))
+					File.Delete(BankStateFile);
+			} else
 				Dump(BankStateFile);
 		}
 
-		// A few sanity checks here would probably be wise here. Currently,
-		// we don't actually parse the file until we display the words. We
-		// should parse it here or at least make sure it's parsable.
+		public void Fill(List<Entry> bank, Stream stream)
+		{
+			string line;
+			using (var sr = new StreamReader(stream))
+				while ((line = sr.ReadLine()) != null) {
+					var toks = line.Split('\t');
+					if (toks.Length == 2)
+						bank.Add(new Entry(toks[0], toks[1]));
+				}
+			stream.Close();
+		}
+
 		public bool Fill(string file)
 		{
 			var newBank = new List<Entry>();
 
 			try {
-				string line;
-				using (var sr = new StreamReader(file))
-					while ((line = sr.ReadLine()) != null) {
-						var toks = line.Split('\t');
-						if (toks.Length == 2)
-							newBank.Add(new Entry(toks[0], toks[1]));
-					}
+				Fill(newBank, new FileStream(file, FileMode.Open));
 			} catch (Exception e) {
 				MessageBox.Show("Error reading word bank: " + e.Message);
 				return false;
