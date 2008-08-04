@@ -102,9 +102,7 @@ namespace Qz {
 
 		public void Init()
 		{
-			if (File.Exists(BankStateFile))
-				Fill(BankStateFile);
-			else {
+			if (File.Exists(BankStateFile) && !Fill(BankStateFile)) {
 				using (var rr = new ResourceReader("words.resources"))
 					foreach (System.Collections.DictionaryEntry word in rr)
 						bank.Add(new Entry((string)word.Key, (string)word.Value));
@@ -127,7 +125,7 @@ namespace Qz {
 		// A few sanity checks here would probably be wise here. Currently,
 		// we don't actually parse the file until we display the words. We
 		// should parse it here or at least make sure it's parsable.
-		public void Fill(string file)
+		public bool Fill(string file)
 		{
 			bank.Clear();
 
@@ -141,12 +139,14 @@ namespace Qz {
 					}
 			} catch (Exception e) {
 				MessageBox.Show("Error reading word bank: " + e.Message);
+				return false;
 			}
 
 			NextGroup();
+			return true;
 		}
 
-		public void Dump(string file)
+		public bool Dump(string file)
 		{
 			try {
 				using (var sw = new System.IO.StreamWriter(file)) {
@@ -158,7 +158,10 @@ namespace Qz {
 				}
 			} catch (Exception e) {
 				MessageBox.Show("Error writing word bank: " + e.Message);
+				return false;
 			}
+
+			return true;
 		}
 
 		private void Next(Graphics g)
@@ -508,7 +511,7 @@ namespace Qz {
 			WordBank.Init();
 		}
 
-		delegate void Callback(string val);
+		delegate bool Callback(string val);
 		private void ShowFileDialog<T>(Callback cb)
 			where T : FileDialog, new()
 		{
