@@ -73,19 +73,11 @@ namespace Qz {
 			MouseDown += OnMouseDown;
 
 			var menu = new MenuStrip();
+			menu.ShowItemToolTips = true;
 			MainMenuStrip = menu;
 
 			{
 				var file = new ToolStripMenuItem("File");
-
-				file.Put("Check/Advance", Keys.None, delegate {
-					Check();
-				}).ShortcutKeyDisplayString = "Space";
-				file.Put("Check Automatically", Keys.None, delegate {
-					autoCheck = !autoCheck;
-				}).CheckOnClick = true;
-
-				file.AddSplit();
 
 				file.Put("Load Words...", Keys.Control | Keys.O, delegate {
 					ShowFileDialog<OpenFileDialog>(WordBank.Fill);
@@ -120,48 +112,58 @@ namespace Qz {
 			}
 
 			{
-				var view = new ToolStripMenuItem("View");
+				var words = new ToolStripMenuItem("Words");
 
 				// There doesn't seem to be a good constant for plus/minus
 				// (You have to use two for each, and both of those display
 				// their names instead of their symbols in the menu)
-				view.Put("Fewer", Keys.None, delegate {
+				words.Put("Fewer", Keys.None, delegate {
 					WordBank.RestoreLast();
 				}).ShortcutKeyDisplayString = "-";
-				view.Put("More", Keys.None, delegate {
+				words.Put("More", Keys.None, delegate {
 					WordBank.AddRandom();
 				}).ShortcutKeyDisplayString = "+";
 
-				view.AddSplit();
+				words.AddSplit();
 
-				var words = view.Put("Shuffle Words", Keys.None, delegate {
+				var ca = words.Put("Check Automatically", Keys.None, delegate {
+					autoCheck = !autoCheck;
+				});
+				var sw = words.Put("Shuffle Words", Keys.None, delegate {
 					WordBank.OrderWords = !WordBank.OrderWords;
 					Relayout();
 				});
-				var defs = view.Put("Shuffle Meanings", Keys.None, delegate {
+				var sd = words.Put("Shuffle Meanings", Keys.None, delegate {
 					WordBank.OrderMeanings = !WordBank.OrderMeanings;
 					Relayout();
 				});
-				var hd = view.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
+				var hd = words.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
 					hideDefs = !hideDefs;
 					Invalidate();
 				});
-				var hc = view.Put("Hide Correctness", Keys.None, delegate {
+				var hc = words.Put("Hide Correctness", Keys.None, delegate {
 					showCorrect = !showCorrect;
 					UpdateCount();
 				});
-				hd.CheckOnClick = words.CheckOnClick
-					= defs.CheckOnClick = hc.CheckOnClick = true;
-				defs.Checked = true;
+				hd.CheckOnClick = sw.CheckOnClick = ca.CheckOnClick
+					= sd.CheckOnClick = hc.CheckOnClick = true;
+				sd.Checked = true;
 
-				view.AddSplit();
+				words.AddSplit();
 
-				view.Put("Relayout", Keys.Control | Keys.R, delegate {
+				words.Put("Relayout", Keys.Control | Keys.R, delegate {
 					Relayout();
 				});
 
-				menu.Items.Add(view);
+				menu.Items.Add(words);
 			}
+
+			var check = new ToolStripMenuItem("Check/Advance", null, delegate {
+				Check();
+			});
+			check.ToolTipText = "Or press space to check/advance";
+			check.AutoToolTip = false;
+			menu.Items.Add(check);
 
 			count = new ToolStripStatusLabel();
 			count.Alignment = ToolStripItemAlignment.Right;
