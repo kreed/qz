@@ -53,7 +53,7 @@ namespace Qz {
 
 			scrollTimer = new Timer();
 			scrollTimer.Interval = 50;
-			scrollTimer.Tick += new EventHandler(DragScroll);
+			scrollTimer.Tick += DragScroll;
 		}
 
 		public void Relayout()
