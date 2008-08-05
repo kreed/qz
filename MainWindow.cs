@@ -167,7 +167,7 @@ namespace Qz {
 				                           WordBank.Correct,
 				                           WordBank.Remaining);
 			else
-			    count.Text = (WordBank.Correct + WordBank.Remaining).ToString();
+				count.Text = (WordBank.Correct + WordBank.Remaining).ToString();
 			Canvas.Invalidate();
 		}
 
