@@ -295,7 +295,7 @@ namespace Qz {
 			if (moving != null && e.Button == MouseButtons.Left) {
 				Drop();
 				if (autoCheck)
-					WordBank.Check();
+					Check();
 			}
 		}
 
