@@ -222,6 +222,7 @@ namespace Qz {
 
 		private void Check()
 		{
+			Drop();
 			if (proceed) {
 				if (WordBank.Check())
 					WordBank.NextGroup();
@@ -280,13 +281,19 @@ namespace Qz {
 			}
 		}
 
-		private void OnMouseUp(object sender, MouseEventArgs e)
+		public void Drop()
 		{
-			if (moving != null && e.Button == MouseButtons.Left) {
+			if (moving != null) {
 				MouseMove -= OnMouseMove;
 				moving = null;
 				scrollTimer.Enabled = false;
+			}
+		}
 
+		private void OnMouseUp(object sender, MouseEventArgs e)
+		{
+			if (moving != null && e.Button == MouseButtons.Left) {
+				Drop();
 				if (autoCheck)
 					WordBank.Check();
 			}
