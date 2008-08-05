@@ -149,7 +149,7 @@ namespace Qz {
 			int wrong = Words.TestWrong();
 			Remaining = wrong + bank.Count;
 			Correct = Words.Count - wrong;
-			Program.Instance.UpdateCount();
+			MainWindow.Instance.UpdateCount();
 			return wrong == 0;
 		}
 
@@ -164,7 +164,7 @@ namespace Qz {
 		public void AddRandom()
 		{
 			if (bank.Count != 0) {
-				using (var g = Program.Instance.CreateGraphics())
+				using (var g = MainWindow.Instance.CreateGraphics())
 					Next(g);
 				GroupSize = Words.Count;
 				Reload();
@@ -191,7 +191,7 @@ namespace Qz {
 			Meanings.Clear();
 
 			if (bank.Count != 0) {
-				using (var g = Program.Instance.CreateGraphics())
+				using (var g = MainWindow.Instance.CreateGraphics())
 					while (Words.Count != GroupSize && bank.Count != 0)
 						Next(g);
 				Reload();

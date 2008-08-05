@@ -30,6 +30,8 @@ using System.Linq;
 
 namespace Qz {
 	static class TileCollection {
+		public readonly static Font FontFace =
+			new Font(FontFamily.GenericSansSerif, 12);
 		public readonly static SolidBrush CorrectBrush =
 			new SolidBrush(Color.FromArgb(85, Color.Green));
 		public const int LineHeight = 40;
@@ -39,7 +41,7 @@ namespace Qz {
 			where T : Tile
 		{
 			foreach (var tile in tiles)
-				g.DrawString(tile.Text, Program.FontFace,
+				g.DrawString(tile.Text, FontFace,
 				             tile.Correct && expose ?
 				             CorrectBrush : Brushes.Black,
 				             tile.Rect.Location);
@@ -54,7 +56,7 @@ namespace Qz {
 			var e = order ? (IEnumerator<T>)current.GetEnumerator()
 			              : new RandomEnumerator<T>(current);
 
-			for (int y = 25; e.MoveNext(); y += LineHeight) {
+			for (int y = 5; e.MoveNext(); y += LineHeight) {
 				e.Current.X = margin;
 				e.Current.Rect.Y = y;
 			}
@@ -99,7 +101,7 @@ namespace Qz {
 		public Tile(string text, Graphics g)
 		{
 			Text = text;
-			Rect.Size = g.MeasureString(Text, Program.FontFace).ToSize();
+			Rect.Size = g.MeasureString(Text, TileCollection.FontFace).ToSize();
 		}
 
 		public int CompareTo(object other)

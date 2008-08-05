@@ -24,41 +24,28 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
 namespace Qz {
-	class Program : Form {
-		public static Program Instance;
-		public static Font FontFace =
-			new Font(FontFamily.GenericSansSerif, 12);
-
-		Bank WordBank = new Bank();
+	class Canvas : ScrollableControl {
+		Bank WordBank;
 
 		bool proceed;
 		Meaning moving;
 		Point lastLoc;
 		int scrollOffset;
 		Timer scrollTimer;
-		ToolStripStatusLabel count;
 
-		bool hideDefs;
-		bool autoCheck;
-		bool showCorrect = true;
+		public bool HideDefs;
+		public bool AutoCheck;
+		public bool ShowCorrect = true;
 
-		static void Main()
+		public Canvas(Bank wb)
 		{
-			Application.Run(new Program());
-		}
+			WordBank = wb;
 
-		private Program()
-		{
-			Instance = this;
-
-			Text = "Qz";
 			BackColor = Color.White;
-			Size = new Size(500, 685);
 			AutoScroll = true;
 
 			SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
@@ -71,131 +58,23 @@ namespace Qz {
 			KeyDown += OnKeyDown;
 			MouseUp += OnMouseUp;
 			MouseDown += OnMouseDown;
-
-			var menu = new MenuStrip();
-			menu.ShowItemToolTips = true;
-			MainMenuStrip = menu;
-
-			{
-				var file = new ToolStripMenuItem("File");
-
-				file.Put("Load Words...", Keys.Control | Keys.O, delegate {
-					ShowFileDialog<OpenFileDialog>(WordBank.Fill);
-				});
-				file.Put("Load Previous Session", Keys.None, delegate {
-					WordBank.Fill(WordBank.BankStateFile);
-				});
-				file.Put("Load Embedded Words", Keys.None,  delegate {
-					WordBank.FillFromEmbed();
-				});
-
-				file.AddSplit();
-
-				file.Put("Save Remaining...", Keys.Control | Keys.S, delegate {
-					ShowFileDialog<SaveFileDialog>(WordBank.Dump);
-				});
-				file.Put("Save Session Now", Keys.None, delegate {
-					WordBank.Dump(WordBank.BankStateFile);
-				});
-
-				file.AddSplit();
-
-				file.Put("Quit, Saving Session", Keys.Control | Keys.Q, delegate {
-					Application.Exit();
-				});
-				file.Put("Quit, Discarding Session", Keys.Shift | Keys.Control | Keys.Q, delegate {
-					WordBank.NoSave();
-					Application.Exit();
-				});
-
-				menu.Items.Add(file);
-			}
-
-			{
-				var words = new ToolStripMenuItem("Words");
-
-				// There doesn't seem to be a good constant for plus/minus
-				// (You have to use two for each, and both of those display
-				// their names instead of their symbols in the menu)
-				words.Put("Fewer", Keys.None, delegate {
-					WordBank.RestoreLast();
-				}).ShortcutKeyDisplayString = "-";
-				words.Put("More", Keys.None, delegate {
-					WordBank.AddRandom();
-				}).ShortcutKeyDisplayString = "+";
-
-				words.AddSplit();
-
-				var ca = words.Put("Check Automatically", Keys.None, delegate {
-					autoCheck = !autoCheck;
-				});
-				var sw = words.Put("Shuffle Words", Keys.None, delegate {
-					WordBank.OrderWords = !WordBank.OrderWords;
-					Relayout();
-				});
-				var sd = words.Put("Shuffle Meanings", Keys.None, delegate {
-					WordBank.OrderMeanings = !WordBank.OrderMeanings;
-					Relayout();
-				});
-				var hd = words.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
-					hideDefs = !hideDefs;
-					Invalidate();
-				});
-				var hc = words.Put("Hide Correctness", Keys.None, delegate {
-					showCorrect = !showCorrect;
-					UpdateCount();
-				});
-				hd.CheckOnClick = sw.CheckOnClick = ca.CheckOnClick
-					= sd.CheckOnClick = hc.CheckOnClick = true;
-				sd.Checked = true;
-
-				words.AddSplit();
-
-				words.Put("Relayout", Keys.Control | Keys.R, delegate {
-					Relayout();
-				});
-
-				menu.Items.Add(words);
-			}
-
-			var check = new ToolStripMenuItem("Check/Advance", null, delegate {
-				Check();
-			});
-			check.ToolTipText = "Or press space to check/advance";
-			check.AutoToolTip = false;
-			menu.Items.Add(check);
-
-			count = new ToolStripStatusLabel();
-			count.Alignment = ToolStripItemAlignment.Right;
-			menu.Items.Add(count);
-
-			Controls.Add(menu);
-
-			WordBank.Init();
 		}
 
-		delegate bool Callback(string val);
-		private void ShowFileDialog<T>(Callback cb)
-			where T : FileDialog, new()
-		{
-			var dlg = new T();
-			dlg.Filter = "Tab Separated Values|*.tsv";
-			dlg.RestoreDirectory = true;
-			if (dlg.ShowDialog(this) == DialogResult.OK)
-				cb(dlg.FileName);
-		}
-
-		private void Relayout()
+		public void Relayout()
 		{
 			WordBank.Reload();
 			proceed = false;
 		}
 
-		public void UpdateCount()
+		public void Check()
 		{
-			count.Text = showCorrect ? String.Format("{0}/{1}", WordBank.Correct, WordBank.Remaining)
-			                         : (WordBank.Correct + WordBank.Remaining).ToString();
-			Invalidate();
+			Drop();
+			if (proceed) {
+				if (WordBank.Check())
+					WordBank.NextGroup();
+				proceed = false;
+			} else if (WordBank.Check())
+				proceed = true;
 		}
 
 		protected override void OnPaint(PaintEventArgs e)
@@ -209,26 +88,15 @@ namespace Qz {
 				                      TextFormatFlags.VerticalCenter);
 			} else {
 				AutoScrollMinSize
-					= new Size(0, WordBank.Words.Count * TileCollection.LineHeight + 10);
+					= new Size(0, WordBank.Words.Count * TileCollection.LineHeight - 10);
 
 				var g = e.Graphics;
 				g.TranslateTransform(0, AutoScrollPosition.Y);
 
-				g.PaintTiles(WordBank.Words, showCorrect || proceed);
-				if (!hideDefs)
-					g.PaintTiles(WordBank.Meanings, showCorrect || proceed);
+				g.PaintTiles(WordBank.Words, ShowCorrect || proceed);
+				if (!HideDefs)
+					g.PaintTiles(WordBank.Meanings, ShowCorrect || proceed);
 			}
-		}
-
-		private void Check()
-		{
-			Drop();
-			if (proceed) {
-				if (WordBank.Check())
-					WordBank.NextGroup();
-				proceed = false;
-			} else if (WordBank.Check())
-				proceed = true;
 		}
 
 		// Since Microsoft hates us, it only allows us to specify a ShortcutKey
@@ -272,7 +140,7 @@ namespace Qz {
 				var loc = e.Location;
 				loc.Y -= AutoScrollPosition.Y;
 				moving = WordBank.Meanings
-					.FindContainer(e.Location, showCorrect || proceed);
+					.FindContainer(e.Location, ShowCorrect || proceed);
 
 				if (moving != null) {
 					MouseMove += OnMouseMove;
@@ -294,7 +162,7 @@ namespace Qz {
 		{
 			if (moving != null && e.Button == MouseButtons.Left) {
 				Drop();
-				if (autoCheck)
+				if (AutoCheck)
 					Check();
 			}
 		}
@@ -338,22 +206,6 @@ namespace Qz {
 				} else
 					scrollTimer.Enabled = false;
 			}
-		}
-	}
-
-	static class MenuUtil {
-		public static ToolStripMenuItem Put(this ToolStripMenuItem menu,
-		                           string text, Keys sc, EventHandler e)
-		{
-			var item = new ToolStripMenuItem(text, null, e);
-			item.ShortcutKeys = sc;
-			menu.DropDownItems.Add(item);
-			return item;
-		}
-
-		public static void AddSplit(this ToolStripMenuItem menu)
-		{
-			menu.DropDownItems.Add(new ToolStripSeparator());
 		}
 	}
 }

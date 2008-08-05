@@ -2,11 +2,12 @@
 #
 LIBS=System.Windows.Forms,System.Drawing
 RES=words.txt
-SRCS=Qz.cs Util.cs Bank.cs Tile.cs Word.cs Meaning.cs
+SRCS=MainWindow.cs Canvas.cs Util.cs Bank.cs Tile.cs Word.cs Meaning.cs
+TGT=Qz.exe
 
-CSC=gmcs -r:$(LIBS) -resource:$(RES) $(SRCS)
+CSC=gmcs -r:$(LIBS) -resource:$(RES) $(SRCS) -out:$(TGT)
 
-Qz.exe: $(SRCS) $(RES)
+$(TGT): $(SRCS) $(RES)
 	$(CSC) -o+ -t:winexe
 
 .PHONY: debug clean all
