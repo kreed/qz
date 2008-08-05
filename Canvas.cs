@@ -45,11 +45,12 @@ namespace Qz {
 		{
 			WordBank = wb;
 
-			BackColor = Color.White;
 			AutoScroll = true;
-
-			SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint
-			         | ControlStyles.DoubleBuffer, true);
+			BackColor = Color.White;
+			var flags = ControlStyles.AllPaintingInWmPaint
+			          | ControlStyles.UserPaint
+			          | ControlStyles.DoubleBuffer;
+			SetStyle(flags, true);
 
 			scrollTimer = new Timer();
 			scrollTimer.Interval = 50;
@@ -83,8 +84,10 @@ namespace Qz {
 				                      TextFormatFlags.HorizontalCenter |
 				                      TextFormatFlags.VerticalCenter);
 			} else {
-				AutoScrollMinSize
-					= new Size(0, WordBank.Words.Count * TileCollection.LineHeight - 10);
+				var vert = WordBank.Words.Count
+				         * TileCollection.LineHeight
+				         - 10;
+				AutoScrollMinSize = new Size(0, vert);
 
 				var g = e.Graphics;
 				g.TranslateTransform(0, AutoScrollPosition.Y);

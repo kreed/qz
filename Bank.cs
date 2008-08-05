@@ -56,7 +56,9 @@ namespace Qz {
 		public string BankStateFile
 		{
 			get {
-				return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Qz.state");
+				var appData = Environment.SpecialFolder.ApplicationData;
+				var appPath = Environment.GetFolderPath(appData);
+				return Path.Combine(appPath, "Qz.state");
 			}
 		}
 

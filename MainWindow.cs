@@ -78,10 +78,12 @@ namespace Qz {
 
 				file.AddSplit();
 
-				file.Put("Quit, Saving Session", Keys.Control | Keys.Q, delegate {
+				file.Put("Quit, Saving Session",
+				         Keys.Control | Keys.Q, delegate {
 					Application.Exit();
 				});
-				file.Put("Quit, Discarding Session", Keys.Shift | Keys.Control | Keys.Q, delegate {
+				file.Put("Quit, Discarding Session",
+				         Keys.Shift | Keys.Control | Keys.Q, delegate {
 					WordBank.NoSave();
 					Application.Exit();
 				});
@@ -115,7 +117,8 @@ namespace Qz {
 					WordBank.OrderMeanings = !WordBank.OrderMeanings;
 					Canvas.Relayout();
 				});
-				var hd = words.Put("Hide Meanings", Keys.Control | Keys.D, delegate {
+				var hd = words.Put("Hide Meanings",
+				                   Keys.Control | Keys.D, delegate {
 					Canvas.HideDefs = !Canvas.HideDefs;
 					Canvas.Invalidate();
 				});
@@ -149,7 +152,8 @@ namespace Qz {
 
 			Canvas.Location = new Point(0, menu.Height);
 			Canvas.Size = ClientSize - new Size(0, menu.Height);
-			Canvas.Anchor = AnchorStyles.Bottom | AnchorStyles.Right | AnchorStyles.Left | AnchorStyles.Top;
+			Canvas.Anchor = AnchorStyles.Bottom | AnchorStyles.Right
+			              | AnchorStyles.Left | AnchorStyles.Top;
 			Controls.Add(menu);
 			Controls.Add(Canvas);
 
@@ -158,8 +162,12 @@ namespace Qz {
 
 		public void UpdateCount()
 		{
-			count.Text = Canvas.ShowCorrect ? String.Format("{0}/{1}", WordBank.Correct, WordBank.Remaining)
-			                                : (WordBank.Correct + WordBank.Remaining).ToString();
+			if (Canvas.ShowCorrect)
+				count.Text = String.Format("{0}/{1}",
+				                           WordBank.Correct,
+				                           WordBank.Remaining);
+			else
+			    count.Text = (WordBank.Correct + WordBank.Remaining).ToString();
 			Canvas.Invalidate();
 		}
 
