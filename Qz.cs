@@ -230,10 +230,11 @@ namespace Qz {
 				proceed = true;
 		}
 
-		// Since Shortcut hates us, it has implemented itself as an enum,
-		// meaning we can't specify shortcuts other than those blessed by
-		// Microsoft. Thus we have our own key handler and specify fake
-		// shortcuts in the MenuItems
+		// Since Microsoft hates us, it only allows us to specify a ShortcutKey
+		// that includes a modifier, and doesn't allow us to specify multiple
+		// shortcuts for a single item. So we have this.
+		//
+		// Curiously, Mono doesn't appear to have this limitation..
 		private void OnKeyDown(object sender, KeyEventArgs e)
 		{
 			switch (e.KeyCode) {
