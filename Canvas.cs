@@ -54,10 +54,6 @@ namespace Qz {
 			scrollTimer = new Timer();
 			scrollTimer.Interval = 50;
 			scrollTimer.Tick += new EventHandler(DragScroll);
-
-			KeyDown += OnKeyDown;
-			MouseUp += OnMouseUp;
-			MouseDown += OnMouseDown;
 		}
 
 		public void Relayout()
@@ -97,6 +93,7 @@ namespace Qz {
 				if (!HideDefs)
 					g.PaintTiles(WordBank.Meanings, ShowCorrect || proceed);
 			}
+			base.OnPaint(e);
 		}
 
 		// Since Microsoft hates us, it only allows us to specify a ShortcutKey
@@ -104,7 +101,7 @@ namespace Qz {
 		// shortcuts for a single item. So we have this.
 		//
 		// Curiously, Mono doesn't appear to have this limitation..
-		private void OnKeyDown(object sender, KeyEventArgs e)
+		protected override void OnKeyDown(KeyEventArgs e)
 		{
 			switch (e.KeyCode) {
 			case Keys.Space:
@@ -127,6 +124,7 @@ namespace Qz {
 				VScrollBy(-25);
 				break;
 			}
+			base.OnKeyDown(e);
 		}
 
 		public void VScrollBy(int v)
@@ -134,7 +132,13 @@ namespace Qz {
 			AutoScrollPosition = new Point(0, -AutoScrollPosition.Y + v);
 		}
 
-		private void OnMouseDown(object sender, MouseEventArgs e)
+		protected override void OnMouseDoubleClick(MouseEventArgs e)
+		{
+			Check();
+			base.OnMouseDoubleClick(e);
+		}
+
+		protected override void OnMouseDown(MouseEventArgs e)
 		{
 			if (e.Button == MouseButtons.Left) {
 				var loc = e.Location;
@@ -147,6 +151,7 @@ namespace Qz {
 					lastLoc = e.Location;
 				}
 			}
+			base.OnMouseDown(e);
 		}
 
 		public void Drop()
@@ -158,13 +163,14 @@ namespace Qz {
 			}
 		}
 
-		private void OnMouseUp(object sender, MouseEventArgs e)
+		protected override void OnMouseUp(MouseEventArgs e)
 		{
 			if (moving != null && e.Button == MouseButtons.Left) {
 				Drop();
 				if (AutoCheck)
 					Check();
 			}
+			base.OnMouseUp(e);
 		}
 
 		private void DragScroll(object o, EventArgs e)
