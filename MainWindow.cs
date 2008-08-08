@@ -165,7 +165,7 @@ namespace Qz {
 
 			WordBank.Init();
 
-			Height = TileCollection.Height + menu.Height;
+			Height = TileCollection.Height + menu.Height + 36;
 		}
 
 		public void UpdateCount()

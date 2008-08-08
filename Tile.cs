@@ -69,14 +69,13 @@ namespace Qz {
 				e = current.GetEnumerator();
 			}
 
-			for (var y = 5; e.MoveNext(); y += LineHeight) {
+			int y;
+			for (y = 5; e.MoveNext(); y += LineHeight) {
 				e.Current.X = margin;
 				e.Current.Rect.Y = y;
 			}
 
-			int i = current.Count - 1;
-			Height = LineHeight * i + 10
-			         + current[i - 1].Rect.Height;
+			Height = y - LineHeight + current[0].Rect.Height + 5;
 		}
 
 		public static int CalcRightEdge<T>(this List<T> current)
