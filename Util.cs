@@ -72,16 +72,12 @@ namespace Qz {
 	static class Util {
 		public readonly static Random Random = new Random();
 
-		public static T TakeAt<T>(this IList<T> list, int i)
+		public static T Next<T>(this IList<T> list)
 		{
+			var i = Random.Next(list.Count);
 			var e = list[i];
 			list.RemoveAt(i);
 			return e;
-		}
-
-		public static T Next<T>(this IList<T> list)
-		{
-			return list.TakeAt(Random.Next(list.Count));
 		}
 	}
 }

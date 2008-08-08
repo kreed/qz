@@ -45,7 +45,7 @@ namespace Qz {
 			Instance = this;
 
 			Text = "Qz";
-			Size = new Size(500, 690);
+			Size = new Size(500, 625);
 
 			WordBank = new Bank();
 			Canvas = new Canvas(WordBank);
@@ -98,10 +98,10 @@ namespace Qz {
 				// (You have to use two for each, and both of those display
 				// their names instead of their symbols in the menu)
 				words.Put("Fewer", Keys.None, delegate {
-					WordBank.RestoreLast();
+					WordBank.Mod(-1);
 				}).ShortcutKeyDisplayString = "-";
 				words.Put("More", Keys.None, delegate {
-					WordBank.AddRandom();
+					WordBank.Mod(1);
 				}).ShortcutKeyDisplayString = "+";
 
 				words.AddSplit();
@@ -158,6 +158,8 @@ namespace Qz {
 			Controls.Add(Canvas);
 
 			WordBank.Init();
+
+			Height = TileCollection.Height + menu.Height;
 		}
 
 		public void UpdateCount()

@@ -84,39 +84,39 @@ namespace Qz {
 				Dump(BankStateFile);
 		}
 
-		public void Fill(List<Entry> bank, Stream stream)
+		public void Fill(Stream stream)
 		{
+			var newBank = new List<Entry>();
 			string line;
+
 			using (var sr = new StreamReader(stream))
 				while ((line = sr.ReadLine()) != null) {
 					var toks = line.Split('\t');
 					if (toks.Length == 2)
-						bank.Add(new Entry(toks[0], toks[1]));
+						newBank.Add(new Entry(toks[0], toks[1]));
 				}
+
 			stream.Close();
+			bank = newBank;
+			Clear();
+			Add();
 		}
 
 		public void FillFromEmbed()
 		{
-			bank.Clear();
-			Fill(bank, Assembly.GetExecutingAssembly()
+			Fill(Assembly.GetExecutingAssembly()
 			     .GetManifestResourceStream("words.txt"));
-			NextGroup();
 		}
 
 		public bool Fill(string file)
 		{
-			var newBank = new List<Entry>();
-
 			try {
-				Fill(newBank, new FileStream(file, FileMode.Open));
+				Fill(new FileStream(file, FileMode.Open));
 			} catch (Exception e) {
 				MessageBox.Show("Error reading word bank: " + e.Message);
 				return false;
 			}
 
-			bank = newBank;
-			NextGroup();
 			return true;
 		}
 
@@ -138,14 +138,6 @@ namespace Qz {
 			return true;
 		}
 
-		private void Next(Graphics g)
-		{
-			var word = bank.Next();
-			var meaning = new Meaning(word.Value, g, Meanings);
-			Words.Add(new Word(word.Key, meaning, g));
-			Meanings.Add(meaning);
-		}
-
 		public bool Check()
 		{
 			int wrong = Words.TestWrong();
@@ -158,46 +150,71 @@ namespace Qz {
 		public void Reload()
 		{
 			int edge = Words.CalcRightEdge();
-			Words.Layout(OrderWords, edge + 5);
-			Meanings.Layout(OrderMeanings, edge + 10);
+			Words.Layout(OrderWords ? LayoutMode.Order
+			                        : LayoutMode.Randomize,
+			             edge + 5);
+			Meanings.Layout(OrderMeanings ? LayoutMode.Order
+			                              : LayoutMode.Randomize,
+			                edge + 10);
 			Check();
 		}
 
-		public void AddRandom()
+		private void RestoreRandom()
 		{
-			if (bank.Count != 0) {
-				using (var g = MainWindow.Instance.CreateGraphics())
-					Next(g);
-				GroupSize = Words.Count;
-				Reload();
+			var word = Words.Next();
+			if (!word.Correct)
+				bank.Add(new Entry(word.Text, word.Meaning.Text));
+			word.Meaning.Remove();
+			Words.Remove(word);
+			Meanings.Remove(word.Meaning);
+			Reload();
+		}
+
+		public void Mod(int delta)
+		{
+			if (delta < 0 && Words.Count > 1) {
+				GroupSize = Words.Count - 1;
+				RestoreRandom();
+			} else if (delta > 0 && bank.Count != 0) {
+				++GroupSize;
+				Add();
 			}
 		}
 
-		public void RestoreLast()
-		{
-			if (Words.Count > 1) {
-				var word = Words.TakeAt(Words.Count - 1);
-				if (!word.Correct)
-					bank.Add(new Entry(word.Text, word.Meaning.Text));
-				word.Meaning.Remove();
-				Words.Remove(word);
-				Meanings.Remove(word.Meaning);
-				GroupSize = Words.Count;
-				Reload();
-			}
-		}
-
-		public void NextGroup()
+		public void Clear()
 		{
 			Words.Clear();
 			Meanings.Clear();
+		}
 
-			if (bank.Count != 0) {
-				using (var g = MainWindow.Instance.CreateGraphics())
-					while (Words.Count != GroupSize && bank.Count != 0)
-						Next(g);
-				Reload();
-			}
+		public void Add()
+		{
+			if (bank.Count == 0)
+				return;
+
+			using (var g = MainWindow.Instance.CreateGraphics())
+				while (Words.Count != GroupSize && bank.Count != 0) {
+					var word = bank.Next();
+					var meaning = new Meaning(word.Value, g, Meanings);
+					Meanings.Add(meaning);
+					Words.Add(new Word(word.Key, meaning, g));
+				}
+
+			Reload();
+		}
+
+		// This doesn't work with multiple instances of Bank, but that's not
+		// much of a problem for us.
+		public void AdjustFont(int delta)
+		{
+			var newSize = TileCollection.FontFace.Size + delta;
+			TileCollection.FontFace =
+				new Font(TileCollection.FontFace.FontFamily, newSize);
+			TileCollection.LineHeight = Math.Abs((int)newSize) * 3;
+
+			int edge = Words.CalcRightEdge();
+			Words.Layout(LayoutMode.Align, edge + 5);
+			Meanings.Layout(LayoutMode.Align, edge + 10);
 		}
 	}
 }

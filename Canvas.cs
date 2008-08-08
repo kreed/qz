@@ -67,8 +67,10 @@ namespace Qz {
 		{
 			Drop();
 			if (proceed) {
-				if (WordBank.Check())
-					WordBank.NextGroup();
+				if (WordBank.Check()) {
+					WordBank.Clear();
+					WordBank.Add();
+				}
 				proceed = false;
 			} else if (WordBank.Check())
 				proceed = true;
@@ -84,10 +86,7 @@ namespace Qz {
 				                      TextFormatFlags.HorizontalCenter |
 				                      TextFormatFlags.VerticalCenter);
 			} else {
-				var vert = WordBank.Words.Count
-				         * TileCollection.LineHeight
-				         - 10;
-				AutoScrollMinSize = new Size(0, vert);
+				AutoScrollMinSize = new Size(0, TileCollection.Height);
 
 				var g = e.Graphics;
 				g.TranslateTransform(0, AutoScrollPosition.Y);
@@ -112,11 +111,11 @@ namespace Qz {
 				break;
 			case Keys.Add:
 			case Keys.Oemplus:
-				WordBank.AddRandom();
+				WordBank.Mod(1);
 				break;
 			case Keys.Subtract:
 			case Keys.OemMinus:
-				WordBank.RestoreLast();
+				WordBank.Mod(-1);
 				break;
 			case Keys.J:
 			case Keys.Down:
@@ -139,6 +138,16 @@ namespace Qz {
 		{
 			Check();
 			base.OnMouseDoubleClick(e);
+		}
+
+		protected override void OnMouseWheel(MouseEventArgs e)
+		{
+			if ((ModifierKeys & Keys.Control) != 0) {
+				WordBank.AdjustFont(e.Delta < 0 ? -1 : 1);
+				Invalidate();
+			} else if ((ModifierKeys & Keys.Shift) != 0)
+				WordBank.Mod(e.Delta);
+			base.OnMouseWheel(e);
 		}
 
 		protected override void OnMouseDown(MouseEventArgs e)

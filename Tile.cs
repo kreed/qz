@@ -29,12 +29,15 @@ using System.Drawing;
 using System.Linq;
 
 namespace Qz {
+	enum LayoutMode { Align, Order, Randomize };
+
 	static class TileCollection {
-		public readonly static Font FontFace =
+		public static Font FontFace =
 			new Font(FontFamily.GenericSansSerif, 12);
+		public static int LineHeight = 36;
 		public readonly static SolidBrush CorrectBrush =
 			new SolidBrush(Color.FromArgb(85, Color.Green));
-		public const int LineHeight = 40;
+		public static int Height;
 
 		public static void PaintTiles<T>(this Graphics g, List<T> tiles,
 		                                 bool expose)
@@ -47,19 +50,33 @@ namespace Qz {
 				             tile.Rect.Location);
 		}
 
-		public static void Layout<T>(this List<T> current, bool order,
-		                             int margin)
+		public static void Layout<T>(this List<T> current,
+		                             LayoutMode mode, int margin)
 			where T : Tile
 		{
-			if (order)
-				current.Sort();
-			var e = order ? (IEnumerator<T>)current.GetEnumerator()
-			              : new RandomEnumerator<T>(current);
+			IEnumerator<T> e;
 
-			for (int y = 5; e.MoveNext(); y += LineHeight) {
+			if (mode == LayoutMode.Randomize)
+				e = new RandomEnumerator<T>(current);
+			else {
+				if (mode == LayoutMode.Align) {
+					using (var g = MainWindow.Instance.CreateGraphics())
+						foreach (var tile in current)
+							tile.CalcSize(g);
+					current.Sort(Tile.CompareLocation);
+				} else if (mode == LayoutMode.Order)
+					current.Sort(Tile.CompareText);
+				e = current.GetEnumerator();
+			}
+
+			for (var y = 5; e.MoveNext(); y += LineHeight) {
 				e.Current.X = margin;
 				e.Current.Rect.Y = y;
 			}
+
+			int i = current.Count - 1;
+			Height = LineHeight * i + 10
+			         + current[i - 1].Rect.Height;
 		}
 
 		public static int CalcRightEdge<T>(this List<T> current)
@@ -78,7 +95,7 @@ namespace Qz {
 		}
 	}
 
-	class Tile : IComparable {
+	class Tile {
 		public readonly string Text;
 		public Rectangle Rect;
 
@@ -101,12 +118,22 @@ namespace Qz {
 		public Tile(string text, Graphics g)
 		{
 			Text = text;
+			CalcSize(g);
+		}
+
+		public void CalcSize(Graphics g)
+		{
 			Rect.Size = g.MeasureString(Text, TileCollection.FontFace).ToSize();
 		}
 
-		public int CompareTo(object other)
+		public static int CompareText(Tile a, Tile b)
 		{
-			return Text.CompareTo((other as Tile).Text);
+			return a.Text.CompareTo(b.Text);
+		}
+
+		public static int CompareLocation(Tile a, Tile b)
+		{
+			return a.Rect.Y - b.Rect.Y;
 		}
 
 		public Tile Pair(Tile other)
