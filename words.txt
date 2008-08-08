@@ -973,7 +973,7 @@ exotic	foreign; strange
 expatiate	to enlarge upon
 expatriate	a person who leaves his native country
 expedient	practical
-expedite	to make easy, to make taster
+expedite	to make easy, to make faster
 expiate	to alone for
 explicate	make clear
 expound	to explain
@@ -1308,7 +1308,7 @@ illustrious	distinguished; bright
 imbibe	to drink; to absorb
 imbroglio	a difficult or confusing situation
 imbue	to fill completely
-immaculate	spotless pure
+immaculate	spotless; pure
 imminent	likely to happen; threatening
 immolate	to kill someone as a sacrificial victim, usually by fire
 immortal	not subject to death
