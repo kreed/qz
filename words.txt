@@ -2762,7 +2762,7 @@ unruly	disorderly
 unsavory	unpleasant
 unscathed	unharmed
 unseemly	in poor taste
-untenable	unable lo be defended
+untenable	unable to be defended
 unwieldy	hard to manage
 unwitting	unintentional
 upbraid	to find fault with
