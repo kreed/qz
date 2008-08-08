@@ -43,8 +43,8 @@ namespace Qz {
 		public int Remaining;
 
 		public int GroupSize = 16;
-		public bool OrderWords = true;
-		public bool OrderMeanings;
+		public LayoutMode WordMode = LayoutMode.Order;
+		public LayoutMode MeaningMode = LayoutMode.Shuffle;
 
 		public bool Finished
 		{
@@ -147,15 +147,16 @@ namespace Qz {
 			return wrong == 0;
 		}
 
-		public void Reload()
+		public void Layout(LayoutMode wordMode, LayoutMode meaningMode)
 		{
 			int edge = Words.CalcRightEdge();
-			Words.Layout(OrderWords ? LayoutMode.Order
-			                        : LayoutMode.Randomize,
-			             edge + 5);
-			Meanings.Layout(OrderMeanings ? LayoutMode.Order
-			                              : LayoutMode.Randomize,
-			                edge + 10);
+			Words.Layout(wordMode, edge + 5);
+			Meanings.Layout(meaningMode, edge + 10);
+		}
+
+		public void Reload()
+		{
+			Layout(WordMode, MeaningMode);
 			Check();
 		}
 
@@ -201,20 +202,6 @@ namespace Qz {
 				}
 
 			Reload();
-		}
-
-		// This doesn't work with multiple instances of Bank, but that's not
-		// much of a problem for us.
-		public void AdjustFont(int delta)
-		{
-			var newSize = TileCollection.FontFace.Size + delta;
-			TileCollection.FontFace =
-				new Font(TileCollection.FontFace.FontFamily, newSize);
-			TileCollection.LineHeight = Math.Abs((int)newSize) * 3;
-
-			int edge = Words.CalcRightEdge();
-			Words.Layout(LayoutMode.Align, edge + 5);
-			Meanings.Layout(LayoutMode.Align, edge + 10);
 		}
 	}
 }

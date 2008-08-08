@@ -76,6 +76,13 @@ namespace Qz {
 				proceed = true;
 		}
 
+		public void ToggleMode(ref LayoutMode mode)
+		{
+			mode = mode == LayoutMode.Order ? LayoutMode.Shuffle
+			                                : LayoutMode.Order;
+			Relayout();
+		}
+
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			if (WordBank.Finished) {
@@ -98,24 +105,16 @@ namespace Qz {
 			base.OnPaint(e);
 		}
 
-		// Since Microsoft hates us, it only allows us to specify a ShortcutKey
-		// that includes a modifier, and doesn't allow us to specify multiple
-		// shortcuts for a single item. So we have this.
-		//
-		// Curiously, Mono doesn't appear to have this limitation..
 		protected override void OnKeyDown(KeyEventArgs e)
 		{
 			switch (e.KeyCode) {
+			// Since Microsoft hates us, it only allows us to specify a
+			// ToolStripMenuItem.ShortcutKey that includes a modifier.
+			// So we stick the space key here.
+			//
+			// Curiously, Mono doesn't appear to have this limitation..
 			case Keys.Space:
 				Check();
-				break;
-			case Keys.Add:
-			case Keys.Oemplus:
-				WordBank.Mod(1);
-				break;
-			case Keys.Subtract:
-			case Keys.OemMinus:
-				WordBank.Mod(-1);
 				break;
 			case Keys.J:
 			case Keys.Down:
@@ -143,11 +142,24 @@ namespace Qz {
 		protected override void OnMouseWheel(MouseEventArgs e)
 		{
 			if ((ModifierKeys & Keys.Control) != 0) {
-				WordBank.AdjustFont(e.Delta < 0 ? -1 : 1);
-				Invalidate();
+				AdjustFont(e.Delta < 0 ? -1 : 1);
 			} else if ((ModifierKeys & Keys.Shift) != 0)
 				WordBank.Mod(e.Delta);
 			base.OnMouseWheel(e);
+		}
+
+		// This doesn't work with multiple instances of Bank and Canvas, but
+		// that's not much of a problem for us.
+		public void AdjustFont(int delta)
+		{
+			var newSize = TileCollection.FontFace.Size + delta;
+			TileCollection.FontFace =
+				new Font(TileCollection.FontFace.FontFamily, newSize);
+			TileCollection.LineHeight = Math.Abs((int)newSize) * 3;
+
+			WordBank.Layout(LayoutMode.Align, LayoutMode.Align);
+
+			Invalidate();
 		}
 
 		protected override void OnMouseDown(MouseEventArgs e)

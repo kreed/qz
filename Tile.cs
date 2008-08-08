@@ -29,7 +29,7 @@ using System.Drawing;
 using System.Linq;
 
 namespace Qz {
-	enum LayoutMode { Align, Order, Randomize };
+	enum LayoutMode { Align, Order, Shuffle };
 
 	static class TileCollection {
 		public static Font FontFace =
@@ -56,7 +56,7 @@ namespace Qz {
 		{
 			IEnumerator<T> e;
 
-			if (mode == LayoutMode.Randomize)
+			if (mode == LayoutMode.Shuffle)
 				e = new RandomEnumerator<T>(current);
 			else {
 				if (mode == LayoutMode.Align) {

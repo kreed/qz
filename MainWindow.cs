@@ -92,17 +92,23 @@ namespace Qz {
 			}
 
 			{
-				var words = new ToolStripMenuItem("Words");
+				var words = new ToolStripMenuItem("Settings");
 
-				// There doesn't seem to be a good constant for plus/minus
-				// (You have to use two for each, and both of those display
-				// their names instead of their symbols in the menu)
-				words.Put("Fewer", Keys.None, delegate {
+				words.Put("Fewer Words", Keys.None, delegate {
 					WordBank.Mod(-1);
-				}).ShortcutKeyDisplayString = "-";
-				words.Put("More", Keys.None, delegate {
+				}).ShortcutKeyDisplayString = "Shift+ScrollDown";
+				words.Put("More Words", Keys.None, delegate {
 					WordBank.Mod(1);
-				}).ShortcutKeyDisplayString = "+";
+				}).ShortcutKeyDisplayString = "Shift+ScrollUp";
+
+				words.AddSplit();
+
+				words.Put("Smaller Font", Keys.None, delegate {
+					Canvas.AdjustFont(-1);
+				}).ShortcutKeyDisplayString = "Ctrl+ScrollDown";
+				words.Put("Larger Font", Keys.None, delegate {
+					Canvas.AdjustFont(1);
+				}).ShortcutKeyDisplayString = "Ctrl+ScrollUp";
 
 				words.AddSplit();
 
@@ -110,13 +116,12 @@ namespace Qz {
 					Canvas.AutoCheck = !Canvas.AutoCheck;
 				});
 				var sw = words.Put("Shuffle Words", Keys.None, delegate {
-					WordBank.OrderWords = !WordBank.OrderWords;
-					Canvas.Relayout();
+					Canvas.ToggleMode(ref WordBank.WordMode);
 				});
 				var sd = words.Put("Shuffle Meanings", Keys.None, delegate {
-					WordBank.OrderMeanings = !WordBank.OrderMeanings;
-					Canvas.Relayout();
+					Canvas.ToggleMode(ref WordBank.MeaningMode);
 				});
+				sd.Checked = true;
 				var hd = words.Put("Hide Meanings",
 				                   Keys.Control | Keys.D, delegate {
 					Canvas.HideDefs = !Canvas.HideDefs;
@@ -128,10 +133,11 @@ namespace Qz {
 				});
 				hd.CheckOnClick = sw.CheckOnClick = ca.CheckOnClick
 					= sd.CheckOnClick = hc.CheckOnClick = true;
-				sd.Checked = true;
 
 				words.AddSplit();
 
+				// This is a little weird in a menu titled "Settings", but
+				// whatever.
 				words.Put("Relayout", Keys.Control | Keys.R, delegate {
 					Canvas.Relayout();
 				});
