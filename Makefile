@@ -17,6 +17,3 @@ debug:
 
 clean:
 	rm -f Qz.exe Qz.exe.mdb
-
-all:
-	$(CSC) -o+ -t:winexe
