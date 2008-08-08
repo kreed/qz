@@ -1658,7 +1658,7 @@ mawkish	overly sentimental
 maxim	a proverb or saying
 meager	inadequate, of poor quality
 meander	to wander aimlessly
-mean	nasty or offensive; inferior or low an average
+mean	nasty or offensive; inferior or low; an average
 mediate	to settle a dispute
 medicant	a beggar
 meditate	to think deeply
