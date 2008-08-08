@@ -2475,7 +2475,7 @@ simultaneous	occurring at the same time
 sinecure	job with no real work
 sinewy	tough or firm
 singular	extraordinary or exceptional
-sinister	threatening evil
+sinister	threatening; evil
 sinuous	winding
 siren	an attractive but dangerous woman
 skeptic	one who doubts
@@ -2560,7 +2560,7 @@ stoic	indifferent to pleasure or pain
 stolid	dull; unemotional
 stratagem	deceptive scheme
 strew	scatter
-striated	parallel bands of grooved
+striated	parallel bands or grooved
 stricture	critical comments
 strident	loud and harsh
 stringent	binding; rigid; harsh; strict
@@ -2638,7 +2638,7 @@ taint	to contaminate; corrupt
 talisman	a charm
 tally	to add up
 tangent	touching or a change of course
-tantalize	lease
+tantalize	tease
 tantamount	equal
 tarry	delay
 taunt	to ridicule
