@@ -1,3 +1,4 @@
+aback	surprised; startled
 abate	to lessen; to decrease
 abdicate	to give up
 abduct	to take away; to kidnap
@@ -239,7 +240,6 @@ avid	enthusiastic
 avocation	a hobby
 avow	to declare openly
 awry	in the wrong direction
-aback	surprised; startled
 badger	to annoy
 baffle	to confuse
 baleful	harmful
@@ -974,7 +974,7 @@ expatiate	to enlarge upon
 expatriate	a person who leaves his native country
 expedient	practical
 expedite	to make easy, to make faster
-expiate	to alone for
+expiate	to atone for
 explicate	make clear
 expound	to explain
 expunge	to erase
@@ -1669,6 +1669,7 @@ melee	noisy fight
 mellifluous	sweet-sounding
 melodramatic	overly emotional
 menace	a threat
+ménage	household
 menagerie	collection of animals
 mendacious	lying
 menial	degrading
@@ -1712,7 +1713,6 @@ misogamy	hatred of marriage
 misogynist	woman-hater
 missive	letter
 mitigate	to make less severe
-ménage	household
 mnemonic	pertaining to memory
 mock	to ridicule or insult
 modish	stylish
@@ -1915,8 +1915,8 @@ parrot	to repeat or imitate
 parry	to avoid something such as a blow; to evade
 parsimonious	stingy
 partisan	a strong supporter
-passive	submissive
 passè	out-of-date
+passive	submissive
 pastoral	pertaining to the country
 patent	government protection for an invention; obvious
 paternal	fatherly
@@ -2059,13 +2059,13 @@ potion	a drink
 potpourri	a mixture
 pragmatic	practical
 prate	to talk long and pointlessly
-précis	brief summary
 precarious	uncertain or risky
 precedent	an act used as example
 precept	a rule of conduct
 precipice	cliff
 precipitate	to bring about an action
 precipitous	extremely steep
+précis	brief summary
 preclude	to shut out; prevent
 precocious	prematurely developed
 precursor	a forerunner
@@ -2341,6 +2341,7 @@ respite	a rest
 resplendent	shining brightly
 restitution	repayment
 restive	restless or impatient
+résumé	a summary
 resurge	to rise again
 resurrection	revival
 resuscitate	to revive
@@ -2375,7 +2376,6 @@ rollicking	carefree
 roster	a list
 rote	from memory
 rout	overwhelming defeat
-résumé	a summary
 rudimentary	elementary
 rue	to regret
 ruffian	lawless person
@@ -2860,10 +2860,10 @@ vulpine	clever
 waif	a homeless person
 waive	to give up
 wallow	to indulge oneself or to roll in
-wan	weak; tired
 wane	to gradually decrease
 wangle	to manipulate
 wanton	reckless
+wan	weak; tired
 warble	to sing
 wary	cautious
 wastrel	one who wastes; a spendthrift
