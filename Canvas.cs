@@ -168,7 +168,7 @@ namespace Qz {
 				var loc = e.Location;
 				loc.Y -= AutoScrollPosition.Y;
 				moving = WordBank.Meanings
-					.FindContainer(e.Location, ShowCorrect || proceed);
+					.FindContainer(loc, ShowCorrect || proceed);
 
 				if (moving != null) {
 					MouseMove += OnMouseMove;
